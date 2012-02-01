@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.robobinding;
+package org.robobinding
 
 import java.io.File;
 
-import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.AbstractMojo
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
@@ -30,31 +30,57 @@ import org.apache.maven.plugin.MojoFailureException;
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-public class BindingAttributeValidatorMojo extends AbstractMojo
+class GroovyBindingAttributeValidatorMojo extends AbstractMojo
 {
-	private static final String RES_LAYOUT_PATH_NAME = "res/layout";
-	
 	/**
 	 * @parameter expression="${basedir}"
 	 * @required
 	 */
-	private File basedir;
+	def baseFolder;
+	def resFolder
 	
 	public void execute() throws MojoExecutionException, MojoFailureException
 	{
-		getLog().info("Validating binding attributes...");
-
-		//1. Locate layout folder
-		File layoutFolder = new File(basedir, RES_LAYOUT_PATH_NAME);
+		getLog().info("Validating binding attributes...")
 		
-		//2. Iterate through each file
-		
-		//3. Does file use the robobinding namespace? - use regexps for fast processing
+		inEachLayoutFolder {
+			inEachXmlFile(it) {
+				if (containsRoboBindingNamespaceDeclaration(it.text)) {
+					
+				}
+			}
+		}
 		
 		//4. Parse the xml into data structure - use regexps for fast processing
 		
 		//5. For each binding attribute declared, check the corresponding view agains the candidate providers (BindingAttributeProviderResolver.getCandidateProviders()
 		
 		//6. If attribute is not resolved, add it to the list
+	}
+
+	
+	def inEachLayoutFolder (Closure c) {
+		getResFolder().eachDirMatch(~/[layout].*/) {
+			c.call(it)
+		}
+	}
+	
+	def inEachXmlFile(folder, Closure c) {
+		folder.eachFileMatch(~/.*[.xml]/) {
+			c.call(it)
+		}
+	}
+	
+	def containsRoboBindingNamespaceDeclaration(text) {
+		def rootNode = new XmlSlurper().parseText(text)
+		def namespaceList = rootNode.'**'.collect { it.namespaceURI() }.unique()
+		namespaceList.contains('http://robobinding.org/android')
+	}
+	
+	def getResFolder() {
+		if (resFolder == null)
+			resFolder = new File(baseFolder, "res")
+			
+		resFolder	
 	}
 }
