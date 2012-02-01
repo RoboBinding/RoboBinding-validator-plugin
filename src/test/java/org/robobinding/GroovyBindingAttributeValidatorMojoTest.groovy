@@ -65,7 +65,7 @@ class GroovyBindingAttributeValidatorMojoTest {
 	}
 	
 	@Test
-	def void givenXmlContainsRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnTrue() {
+	def void givenXmlContainsRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnName() {
 		def xmlWithRoboBindingNamespaceDeclaration = 
 			'''<?xml version="1.0" encoding="utf-8"?>
 				<LinearLayout
@@ -73,87 +73,99 @@ class GroovyBindingAttributeValidatorMojoTest {
 					xmlns:bind="http://robobinding.org/android"
 					android:orientation="horizontal"></LinearLayout>'''
 		
-		assertTrue validatorMojo.containsRoboBindingNamespaceDeclaration(xmlWithRoboBindingNamespaceDeclaration)
+		assertNotNull validatorMojo.containsRoboBindingNamespaceDeclaration(xmlWithRoboBindingNamespaceDeclaration)
 	}
 	
 	@Test
-	def void givenXmlDoesNotContainRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnFalse() {
+	def void givenXmlDoesNotContainRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnNull() {
 		def xmlWithoutRoboBindingNamespaceDeclaration =
 			'''<?xml version="1.0" encoding="utf-8"?>
 				<LinearLayout
 					xmlns:android="http://schemas.android.com/apk/res/android"
 					android:orientation="horizontal"></LinearLayout>'''
 		
-		assertFalse validatorMojo.containsRoboBindingNamespaceDeclaration(xmlWithoutRoboBindingNamespaceDeclaration)
+		assertNull validatorMojo.containsRoboBindingNamespaceDeclaration(xmlWithoutRoboBindingNamespaceDeclaration)
 	}
 	
 	@Test
-	def void testXmlSlurperNamespaceQuerying() {	
+	def void givenXmlWithBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
 		def xml = '''<?xml version="1.0" encoding="utf-8"?>
-					<LinearLayout
-						xmlns:android="http://schemas.android.com/apk/res/android"
-						xmlns:bind="http://robobinding.org/android"
-						android:orientation="horizontal">
-
-		  <nons>test</nons>
-		  
-					</LinearLayout>'''
+			<LinearLayout
+				xmlns:android="http://schemas.android.com/apk/res/android"
+				xmlns:bind="http://robobinding.org/android"
+				android:orientation="horizontal">
+				<EditText
+					android:layout_width="fill_parent"
+					android:layout_height="wrap_content"
+					bind:enabled="{firstnameInputEnabled}"
+					bind:text="${firstname}" />
+			</LinearLayout>'''
 		
-		def result = new XmlSlurper().parseText(xml)
-		def result2 = new XmlSlurper().parseText(xml)
+		def viewFound, attributesFound
+		validatorMojo.forEachViewWithBindingAttributes() {viewName, attributes ->
+			viewFound = viewName
+			attributesFound = attributes
+		}
 		
-		println result.'**'.each {println it.namespaceURI()}
+		assertEquals ("EditText", viewFound) 
+		assertEquals (["enabled", "text"], attributesFound)
+	}
+	
+	@Test
+	def void testGettingAllAttributes() {
 		
-		println "Tag hints: ${result.@namespaceTagHints}"
-		def xmlClass = result.getClass()
-		def gpathClass = xmlClass.getSuperclass()
-		def namespaceTagHints = gpathClass.getDeclaredField("namespaceTagHints")
-		namespaceTagHints.setAccessible(true)
-		println namespaceTagHints.get(result)
-		println namespaceTagHints.get(result2)
+		def xml = '''<?xml version="1.0" encoding="utf-8"?>
+				<LinearLayout
+					xmlns:android="http://schemas.android.com/apk/res/android"
+					xmlns:bind="http://robobinding.org/android"					
+					android:orientation="horizontal">
+					<EditText
+				        android:layout_width="fill_parent"
+				        android:layout_height="wrap_content"
+				        bind:enabled="{firstnameInputEnabled}"
+				        bind:text="${firstname}" />
+				</LinearLayout>'''
 		
-		println "Tag hints: ${result.@namespaceTagHints}"
+		def rootNode = new XmlSlurper().parseText(xml)//.declareNamespace(bind: "http://robobinding.org/android",
+			//android: "http://schemas.android.com/apk/res/android")
 		
-		def s = '''<?xml version="1.0" encoding="utf-8"?>
-		<Root 
-			xmlns:a="http://a.example" 
-			xmlns:b="http://b.example" 
-			xmlns:c="http://c.example" 
-			xmlns:d="http://d.example"
-		a:orientation="crap">
-		  <a:name>Test A</a:name>
-		  <b:name>Test B</b:name>
-		  <b:stuff>
-			  <c:foo>bar</c:foo>
-			  <c:baz>
-				  <d:foo2/>
-			  </c:baz>
-		  </b:stuff>
-		  <nons>test</nons>
-		  <c:test/>
-		</Root>'''
 		
-		def xmls = new XmlSlurper().parseText(xml)
+		rootNode.children().each {
+			
+			it.each { a ->
+				println a.getClass()
+				println a
+				
+				def xmlClass = a.getClass()
+				//def gpathClass = xmlClass.getSuperclass()
+				def nodeField = xmlClass.getDeclaredField("node")
+				nodeField.setAccessible(true)
+				def node = nodeField.get(a)
+				def nodeClass = node.getClass();
+				def attributeNamespaces = nodeClass.getDeclaredField("attributeNamespaces");
+				attributeNamespaces.setAccessible(true)
+				println "node: ${attributeNamespaces.get(node)}"
+				
+				a.each { b ->
+					println b.getClass()
+					println b
+				}
+			}
+			
+			println it.nodeIterator().next().name()
+			//println it.getClass()
+				//def nodeClass = rootNode.getClass()
+				//def node = nodeClass.getDeclaredField("node")
+				//println node.get(nodeClass)
+				//it.attributes().each{key, value ->
+				//	println it."@bind:${key}"
+				//}
+				//println it.title
+//				println key
+//				println value
+			} 
 		
-		def namespaceList = xmls.'**'.collect { it.namespaceURI() }.unique()
-		
-		println namespaceList
-		
-//		println result.lookupNamespace("android")
-//		println result.lookupNamespace("bind")
-//		println result.namespaceTagHints
-//		println result.namespacePrefix
-//		println result.namespaceMap
-		
-//		def namespaceList = result.'**'.collect { it.namespaceURI() }.unique()
-//		
-//		println namespaceList
-		
-//		def bindingNamespace = result.'**'.find { it.namespaceURI().equals('http://robobinding.org/android') }
-//		
-//		println bindingNamespace
-		
-		//println "${result} ${result.name} namespaces: ${result.namespaceMap} ${result.size()} ${result[0]} ${result.'@android:orientation'}"
+		//println "Nodes ${nodes}"
 	}
 	
 	@Before

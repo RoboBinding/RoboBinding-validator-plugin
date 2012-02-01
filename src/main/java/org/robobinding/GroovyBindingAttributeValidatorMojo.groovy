@@ -44,10 +44,9 @@ class GroovyBindingAttributeValidatorMojo extends AbstractMojo
 		getLog().info("Validating binding attributes...")
 		
 		inEachLayoutFolder {
-			inEachXmlFile(it) {
-				if (containsRoboBindingNamespaceDeclaration(it.text)) {
-					
-				}
+			inEachXmlFileWithBindings(it) {
+				
+				
 			}
 		}
 		
@@ -71,10 +70,29 @@ class GroovyBindingAttributeValidatorMojo extends AbstractMojo
 		}
 	}
 	
-	def containsRoboBindingNamespaceDeclaration(text) {
-		def rootNode = new XmlSlurper().parseText(text)
-		def namespaceList = rootNode.'**'.collect { it.namespaceURI() }.unique()
-		namespaceList.contains('http://robobinding.org/android')
+	def inEachXmlFileWithBindings(folder, Closure c) {
+		inEachXmlFile(it) {
+			if (getRoboBindingNamespaceDeclaration(it.text)) {
+				c.call(it)
+			}
+		}
+	}
+	
+	def getRoboBindingNamespaceDeclaration(xml) {
+		def rootNode = new XmlSlurper().parseText(xml)
+		
+		def xmlClass = rootNode.getClass()
+		def gpathClass = xmlClass.getSuperclass()
+		def namespaceTagHints = gpathClass.getDeclaredField("namespaceTagHints")
+		namespaceTagHints.setAccessible(true)
+		
+		def namespaceDeclarations = namespaceTagHints.get(rootNode)
+		
+		for (String name : namespaceDeclarations.keySet()) {
+			if (namespaceDeclarations.get(name) == 'http://robobinding.org/android') {
+				return name
+			}
+		}
 	}
 	
 	def getResFolder() {
