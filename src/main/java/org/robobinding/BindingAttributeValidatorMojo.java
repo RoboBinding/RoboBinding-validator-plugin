@@ -31,5 +31,16 @@ public class BindingAttributeValidatorMojo extends AbstractMojo
 	{
 		getLog().info("Validating binding attributes...");
 
+		//1. Locate layout folder
+		
+		//2. Iterate through each file
+		
+		//3. Parse the xml into data structure
+		
+		//4. Does file use the robobinding namespace?
+		
+		//5. For each binding attribute declared, check the corresponding view agains tthe candidate providers (BindingAttributeProviderResolver.getCandidateProviders()
+		
+		//6. If attribute is not resolved, add it to the list
 	}
 }
