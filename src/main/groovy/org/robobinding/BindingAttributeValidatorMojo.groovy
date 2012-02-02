@@ -15,11 +15,8 @@
  */
 package org.robobinding
 
-import java.io.File;
-
-import org.apache.maven.plugin.AbstractMojo
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.MojoFailureException
+import org.codehaus.groovy.maven.mojo.GroovyMojo
 
 /**
  *
@@ -30,31 +27,35 @@ import org.apache.maven.plugin.MojoFailureException;
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class GroovyBindingAttributeValidatorMojo extends AbstractMojo
+class BindingAttributeValidatorMojo extends GroovyMojo
 {
 	/**
 	 * @parameter expression="${basedir}"
 	 * @required
 	 */
-	def baseFolder;
+	def baseFolder
+	
 	def resFolder
 	
-	public void execute() throws MojoExecutionException, MojoFailureException
+	void execute()
 	{
-		getLog().info("Validating binding attributes...")
+		log.info("Validating binding attributes...")
 		
 		inEachLayoutFolder {
-			inEachXmlFileWithBindings(it) {
-				
-				
+			inEachXmlFileWithBindings(it) { xmlFile ->
+				forEachViewWithBindingAttributes(xmlFile.text) { viewName, attributes ->
+					
+					//5. For each binding attribute declared, check the corresponding view against the candidate providers (BindingAttributeProviderResolver.getCandidateProviders()
+					
+					//6. If attribute is not resolved, throw exception
+					
+					if (attributes.contains("mistake"))
+						throw new MojoFailureException("${viewName} does not support attribute 'mistake'")
+				}
 			}
 		}
 		
-		//4. Parse the xml into data structure - use regexps for fast processing
-		
-		//5. For each binding attribute declared, check the corresponding view agains the candidate providers (BindingAttributeProviderResolver.getCandidateProviders()
-		
-		//6. If attribute is not resolved, add it to the list
+		log.info("Done.")
 	}
 
 	
@@ -71,7 +72,7 @@ class GroovyBindingAttributeValidatorMojo extends AbstractMojo
 	}
 	
 	def inEachXmlFileWithBindings(folder, Closure c) {
-		inEachXmlFile(it) {
+		inEachXmlFile(folder) {
 			if (getRoboBindingNamespaceDeclaration(it.text)) {
 				c.call(it)
 			}
@@ -92,6 +93,32 @@ class GroovyBindingAttributeValidatorMojo extends AbstractMojo
 			if (namespaceDeclarations.get(name) == 'http://robobinding.org/android') {
 				return name
 			}
+		}
+	}
+	
+	def forEachViewWithBindingAttributes(xml, Closure c) {
+		def rootNode = new XmlSlurper().parseText(xml)
+		
+		rootNode.children().each {
+			processViewNode(it, c)
+		}
+	}
+	
+	def processViewNode(viewNode, Closure c) {
+		def viewName = viewNode.name()
+		
+		def nodeField = viewNode.getClass().getDeclaredField("node")
+		nodeField.setAccessible(true)
+		def node = nodeField.get(viewNode)
+		def attributeNamespacesField = node.getClass().getDeclaredField("attributeNamespaces")
+		attributeNamespacesField.setAccessible(true)
+		def attributeNamespaces = attributeNamespacesField.get(node)
+		
+		def bindingAttributes = attributeNamespaces.findAll { it.value == 'http://robobinding.org/android' }
+		c.call(viewName, bindingAttributes*.key)
+		
+		viewNode.children().each {
+			processViewNode(it, c)
 		}
 	}
 	

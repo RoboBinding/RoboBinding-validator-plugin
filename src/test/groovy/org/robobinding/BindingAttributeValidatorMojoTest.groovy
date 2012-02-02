@@ -13,13 +13,7 @@
 * See the License for the specific language governing permissions
 * and limitations under the License.
 */
-
 package org.robobinding
-
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
-import static org.junit.Assert.*
 
 /**
 *
@@ -27,7 +21,7 @@ import static org.junit.Assert.*
 * @version $Revision: 1.0 $
 * @author Robert Taylor
 */
-class GroovyBindingAttributeValidatorMojoTest {
+class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 
 	private static final String TEMP_PATH = "."
 	
@@ -36,8 +30,7 @@ class GroovyBindingAttributeValidatorMojoTest {
 	def layoutFoldersCount
 	def xmlFilesCount
 	
-	@Test
-	def void whenProcessingEachLayoutFolder_thenInvokeTheClosureOnEachFolder() {
+	def void test_whenProcessingEachLayoutFolder_thenInvokeTheClosureOnEachFolder() {
 		createLayoutFolders()
 
 		def layoutFoldersProcessed = 0
@@ -50,8 +43,7 @@ class GroovyBindingAttributeValidatorMojoTest {
 		assertEquals(layoutFoldersCount, layoutFoldersProcessed)
 	}
 	
-	@Test
-	def void whenProcessingEachXmlFile_thenInvokeTheClosureOnEachXmlFile() {
+	def void test_whenProcessingEachXmlFile_thenInvokeTheClosureOnEachXmlFile() {
 		createLayoutXmlFiles()
 
 		def xmlFilesProcessed = 0
@@ -64,8 +56,7 @@ class GroovyBindingAttributeValidatorMojoTest {
 		assertEquals(xmlFilesCount, xmlFilesProcessed)
 	}
 	
-	@Test
-	def void givenXmlContainsRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnName() {
+	def void test_givenXmlContainsRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnName() {
 		def xmlWithRoboBindingNamespaceDeclaration = 
 			'''<?xml version="1.0" encoding="utf-8"?>
 				<LinearLayout
@@ -73,22 +64,20 @@ class GroovyBindingAttributeValidatorMojoTest {
 					xmlns:bind="http://robobinding.org/android"
 					android:orientation="horizontal"></LinearLayout>'''
 		
-		assertNotNull validatorMojo.containsRoboBindingNamespaceDeclaration(xmlWithRoboBindingNamespaceDeclaration)
+		assertNotNull validatorMojo.getRoboBindingNamespaceDeclaration(xmlWithRoboBindingNamespaceDeclaration)
 	}
 	
-	@Test
-	def void givenXmlDoesNotContainRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnNull() {
+	def void test_givenXmlDoesNotContainRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnNull() {
 		def xmlWithoutRoboBindingNamespaceDeclaration =
 			'''<?xml version="1.0" encoding="utf-8"?>
 				<LinearLayout
 					xmlns:android="http://schemas.android.com/apk/res/android"
 					android:orientation="horizontal"></LinearLayout>'''
 		
-		assertNull validatorMojo.containsRoboBindingNamespaceDeclaration(xmlWithoutRoboBindingNamespaceDeclaration)
+		assertNull validatorMojo.getRoboBindingNamespaceDeclaration(xmlWithoutRoboBindingNamespaceDeclaration)
 	}
 	
-	@Test
-	def void givenXmlWithBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
+	def void test_givenXmlWithBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
 		def xml = '''<?xml version="1.0" encoding="utf-8"?>
 			<LinearLayout
 				xmlns:android="http://schemas.android.com/apk/res/android"
@@ -102,7 +91,7 @@ class GroovyBindingAttributeValidatorMojoTest {
 			</LinearLayout>'''
 		
 		def viewFound, attributesFound
-		validatorMojo.forEachViewWithBindingAttributes() {viewName, attributes ->
+		validatorMojo.forEachViewWithBindingAttributes(xml) {viewName, attributes ->
 			viewFound = viewName
 			attributesFound = attributes
 		}
@@ -111,69 +100,41 @@ class GroovyBindingAttributeValidatorMojoTest {
 		assertEquals (["enabled", "text"], attributesFound)
 	}
 	
-	@Test
-	def void testGettingAllAttributes() {
-		
+	def void test_givenXmlWithNestedBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
 		def xml = '''<?xml version="1.0" encoding="utf-8"?>
-				<LinearLayout
-					xmlns:android="http://schemas.android.com/apk/res/android"
-					xmlns:bind="http://robobinding.org/android"					
-					android:orientation="horizontal">
-					<EditText
-				        android:layout_width="fill_parent"
-				        android:layout_height="wrap_content"
-				        bind:enabled="{firstnameInputEnabled}"
-				        bind:text="${firstname}" />
-				</LinearLayout>'''
+			<LinearLayout
+				xmlns:android="http://schemas.android.com/apk/res/android"
+				xmlns:bind="http://robobinding.org/android"
+				android:orientation="horizontal">
+				<RadioGroup
+					android:layout_width="fill_parent"
+					android:layout_height="wrap_content"
+					bind:enabled="{enabled}" >
+					
+					<RadioButton
+						android:layout_width="fill_parent"
+						android:layout_height="wrap_content"
+						bind:visibility="{visible}" />
+
+				</RadioGroup>
+			</LinearLayout>'''
 		
-		def rootNode = new XmlSlurper().parseText(xml)//.declareNamespace(bind: "http://robobinding.org/android",
-			//android: "http://schemas.android.com/apk/res/android")
+		def viewsFound = []
+		def attributesFound = [:]
+		validatorMojo.forEachViewWithBindingAttributes(xml) {viewName, attributes ->
+			viewsFound << viewName
+			attributesFound[viewName] = attributes
+		}
 		
-		
-		rootNode.children().each {
-			
-			it.each { a ->
-				println a.getClass()
-				println a
-				
-				def xmlClass = a.getClass()
-				//def gpathClass = xmlClass.getSuperclass()
-				def nodeField = xmlClass.getDeclaredField("node")
-				nodeField.setAccessible(true)
-				def node = nodeField.get(a)
-				def nodeClass = node.getClass();
-				def attributeNamespaces = nodeClass.getDeclaredField("attributeNamespaces");
-				attributeNamespaces.setAccessible(true)
-				println "node: ${attributeNamespaces.get(node)}"
-				
-				a.each { b ->
-					println b.getClass()
-					println b
-				}
-			}
-			
-			println it.nodeIterator().next().name()
-			//println it.getClass()
-				//def nodeClass = rootNode.getClass()
-				//def node = nodeClass.getDeclaredField("node")
-				//println node.get(nodeClass)
-				//it.attributes().each{key, value ->
-				//	println it."@bind:${key}"
-				//}
-				//println it.title
-//				println key
-//				println value
-			} 
-		
-		//println "Nodes ${nodes}"
+		assertEquals (["RadioGroup", "RadioButton"], viewsFound)
+		assertEquals ([RadioGroup: ["enabled"], RadioButton: ["visibility"]], attributesFound)
 	}
 	
-	@Before
 	def void setUp() {
 		resFolder = new File("${TEMP_PATH}/res")
 		resFolder.mkdir()
 		
-		validatorMojo = new GroovyBindingAttributeValidatorMojo()
+		validatorMojo = new BindingAttributeValidatorMojo()
 		validatorMojo.baseFolder = new File(TEMP_PATH)
 	}
 	
@@ -198,7 +159,6 @@ class GroovyBindingAttributeValidatorMojoTest {
 		}
 	}
 	
-	@After
 	def void tearDown() {
 		resFolder.deleteDir()
 	}
