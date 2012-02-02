@@ -97,7 +97,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 		}
 		
 		assertEquals ("EditText", viewFound) 
-		assertEquals (["enabled", "text"], attributesFound)
+		assertEquals ([enabled: '{firstnameInputEnabled}', text: '${firstname}'], attributesFound)
 	}
 	
 	def void test_givenXmlWithNestedBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
@@ -127,7 +127,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 		}
 		
 		assertEquals (["RadioGroup", "RadioButton"], viewsFound)
-		assertEquals ([RadioGroup: ["enabled"], RadioButton: ["visibility"]], attributesFound)
+		assertEquals ([RadioGroup: [enabled:"{enabled}"], RadioButton: [visibility:"{visible}"]], attributesFound)
 	}
 	
 	def void setUp() {

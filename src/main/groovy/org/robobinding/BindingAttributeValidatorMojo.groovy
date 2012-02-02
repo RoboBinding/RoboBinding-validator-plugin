@@ -15,8 +15,14 @@
  */
 package org.robobinding
 
+import groovy.mock.interceptor.StubFor
+
 import org.apache.maven.plugin.MojoFailureException
 import org.codehaus.groovy.maven.mojo.GroovyMojo
+import org.robobinding.binder.BindingAttributeProcessor
+import org.robobinding.binder.ViewNameResolver
+
+import android.content.Context;
 
 /**
  *
@@ -36,6 +42,7 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 	def baseFolder
 	
 	def resFolder
+	def bindingAttributeProcessor
 	
 	void execute()
 	{
@@ -45,12 +52,16 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 			inEachXmlFileWithBindings(it) { xmlFile ->
 				forEachViewWithBindingAttributes(xmlFile.text) { viewName, attributes ->
 					
-					//5. For each binding attribute declared, check the corresponding view against the candidate providers (BindingAttributeProviderResolver.getCandidateProviders()
+					def fullyQualifiedViewName = new ViewNameResolver().getViewNameFromLayoutTag(viewName)
+					Class viewClass = Class.forName(fullyQualifiedViewName)
+					def view = org.mockito.Mockito.mock(viewClass)
 					
-					//6. If attribute is not resolved, throw exception
-					
-					if (attributes.contains("mistake"))
-						throw new MojoFailureException("${viewName} does not support attribute 'mistake'")
+					try {
+						getBindingAttributeProcessor().process(view, attributes)
+					}
+					catch (RuntimeException e) {
+						throw new MojoFailureException("\n\n${fullyQualifiedViewName} in ${xmlFile.name} has binding errors:\n\n${e.message}")
+					}
 				}
 			}
 		}
@@ -106,6 +117,7 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 	
 	def processViewNode(viewNode, Closure c) {
 		def viewName = viewNode.name()
+		def viewAttributes = viewNode.attributes()
 		
 		def nodeField = viewNode.getClass().getDeclaredField("node")
 		nodeField.setAccessible(true)
@@ -115,7 +127,8 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 		def attributeNamespaces = attributeNamespacesField.get(node)
 		
 		def bindingAttributes = attributeNamespaces.findAll { it.value == 'http://robobinding.org/android' }
-		c.call(viewName, bindingAttributes*.key)
+		def bindingAttributeNames = bindingAttributes*.key
+		c.call(viewName, viewAttributes.subMap(bindingAttributeNames))
 		
 		viewNode.children().each {
 			processViewNode(it, c)
@@ -127,5 +140,12 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 			resFolder = new File(baseFolder, "res")
 			
 		resFolder	
+	}
+	
+	def getBindingAttributeProcessor() {
+		if (bindingAttributeProcessor == null)
+			bindingAttributeProcessor = new BindingAttributeProcessor(null, true)
+	
+		bindingAttributeProcessor		
 	}
 }
