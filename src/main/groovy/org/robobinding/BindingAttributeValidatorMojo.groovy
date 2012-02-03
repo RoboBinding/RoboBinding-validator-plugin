@@ -119,9 +119,7 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 		def viewName = viewNode.name()
 		def viewAttributes = viewNode.attributes()
 		
-		def nodeField = viewNode.getClass().getDeclaredField("node")
-		nodeField.setAccessible(true)
-		def node = nodeField.get(viewNode)
+		def node = viewNode[0]
 		def attributeNamespacesField = node.getClass().getDeclaredField("attributeNamespaces")
 		attributeNamespacesField.setAccessible(true)
 		def attributeNamespaces = attributeNamespacesField.get(node)
