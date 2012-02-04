@@ -15,9 +15,20 @@
  */
 package org.robobinding
 
+import java.util.logging.Logger
+
 import org.apache.maven.plugin.MojoFailureException
 import org.apache.maven.project.MavenProject
+import org.codehaus.classworlds.ClassRealm
 import org.codehaus.groovy.maven.mojo.GroovyMojo
+import org.codehaus.plexus.component.configurator.AbstractComponentConfigurator
+import org.codehaus.plexus.component.configurator.ComponentConfigurationException
+import org.codehaus.plexus.component.configurator.ConfigurationListener
+import org.codehaus.plexus.component.configurator.converters.composite.ObjectWithFieldsConverter
+import org.codehaus.plexus.component.configurator.converters.special.ClassRealmConverter
+import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluationException
+import org.codehaus.plexus.component.configurator.expression.ExpressionEvaluator
+import org.codehaus.plexus.configuration.PlexusConfiguration
 import org.robobinding.binder.BindingAttributeProcessor
 import org.robobinding.binder.ViewNameResolver
 
@@ -25,8 +36,7 @@ import org.robobinding.binder.ViewNameResolver
  *
  * @goal validate-bindings
  * @phase compile
- * @requiresDependencyResolution compile
- * @requiresDependencyCollection compile
+ * @configurator include-project-dependencies
  * 
  * @since 1.0
  * @version $Revision: 1.0 $
@@ -43,42 +53,42 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 	def resFolder
 	def bindingAttributeProcessor
 	
-	/**
-	* The maven project.
-	*
-	* @parameter expression="${project}"
-	* @required
-	*/
-   protected MavenProject project;
-   
-   private ClassLoader classLoader;
-   
-   protected ClassLoader getClassLoader() {
-	 synchronized (BindingAttributeValidatorMojo.class) {
-	   if (classLoader != null)
-		 return classLoader;
-	 }
-	 synchronized (BindingAttributeValidatorMojo.class) {
-	   List<URL> urls = new ArrayList<URL>();
-	   for (Object object : project.getCompileClasspathElements()) {
-		 String path = (String) object;
-		 urls.add(new File(path).toURL());
-	   }
-	   
-	   println "Dependencies: ${project.getDependencies()}"
-	   println "Compile Dependencies: ${project.getCompileDependencies()}"
-	   
-	   for (Object object : project.getDependencies()) {
-		   String path = (String) object;
-		   urls.add(new File(path).toURL());
-		 }
-	   
-	   URL[] urlArray = urls
-	   classLoader = new URLClassLoader(urlArray /*, parentClassLoader */);
-	   // Thread.currentThread().setContextClassLoader(classLoader); // if needed
-	   return classLoader;
-	 }
-   }
+//	/**
+//	* The maven project.
+//	*
+//	* @parameter expression="${project}"
+//	* @required
+//	*/
+//   protected MavenProject project;
+//   
+//   private ClassLoader classLoader;
+//   
+//   protected ClassLoader getClassLoader() {
+//	 synchronized (BindingAttributeValidatorMojo.class) {
+//	   if (classLoader != null)
+//		 return classLoader;
+//	 }
+//	 synchronized (BindingAttributeValidatorMojo.class) {
+//	   List<URL> urls = new ArrayList<URL>();
+//	   for (Object object : project.getCompileClasspathElements()) {
+//		 String path = (String) object;
+//		 urls.add(new File(path).toURL());
+//	   }
+//	   
+//	   println "Dependencies: ${project.getDependencies()}"
+//	   println "Compile Dependencies: ${project.getCompileDependencies()}"
+//	   
+//	   for (Object object : project.getDependencies()) {
+//		   String path = (String) object;
+//		   urls.add(new File(path).toURL());
+//		 }
+//	   
+//	   URL[] urlArray = urls
+//	   classLoader = new URLClassLoader(urlArray /*, parentClassLoader */);
+//	   // Thread.currentThread().setContextClassLoader(classLoader); // if needed
+//	   return classLoader;
+//	 }
+//   }
 	
 	void execute()
 	{
@@ -90,7 +100,7 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 			inEachXmlFileWithBindings(it) { xmlFile ->
 				forEachViewWithBindingAttributes(xmlFile.text) { viewName, attributes ->
 					def fullyQualifiedViewName = new ViewNameResolver().getViewNameFromLayoutTag(viewName)
-					Class viewClass = getClass(fullyQualifiedViewName)
+					Class viewClass = Class.forName(fullyQualifiedViewName)
 					def view = org.mockito.Mockito.mock(viewClass)
 					
 					try {
@@ -125,9 +135,9 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 		message
 	}
 	
-	protected Class<?> getClass(String className) {
-		return getClassLoader().loadClass(className);
-	  }
+//	protected Class<?> getClass(String className) {
+//		return getClassLoader().loadClass(className);
+//	  }
 	
 //	def getViewInstance(viewName) {
 //		def fullyQualifiedViewName = new ViewNameResolver().getViewNameFromLayoutTag(viewName)
@@ -226,4 +236,5 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 	
 		bindingAttributeProcessor		
 	}
+	
 }
