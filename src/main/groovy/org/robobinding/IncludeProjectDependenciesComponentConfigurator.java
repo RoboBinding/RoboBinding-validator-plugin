@@ -4,8 +4,11 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.classworlds.ClassRealm;
 import org.codehaus.plexus.component.configurator.AbstractComponentConfigurator;
@@ -36,7 +39,7 @@ public class IncludeProjectDependenciesComponentConfigurator extends
 	// private static final Logger LOGGER =
 	// Logger.getLogger(IncludeProjectDependenciesComponentConfigurator.class);
 
-	MavenProject project;
+   protected MavenProject project;
 	
 	public void configureComponent(Object component,
 			PlexusConfiguration configuration,
@@ -44,7 +47,6 @@ public class IncludeProjectDependenciesComponentConfigurator extends
 			ConfigurationListener listener)
 			throws ComponentConfigurationException {
 
-		//project.getcom
 		
 		addProjectDependenciesToClassRealm(expressionEvaluator, containerRealm);
 
@@ -65,14 +67,31 @@ public class IncludeProjectDependenciesComponentConfigurator extends
 		try {
 			// noinspection unchecked
 			runtimeClasspathElements = (List<String>) expressionEvaluator
-					.evaluate("${project.compileDependencies}");
+					.evaluate("${project.runtimeClasspathElements}");
+			project = (MavenProject)expressionEvaluator
+					.evaluate("${project}");
 		} catch (ExpressionEvaluationException e) {
 			throw new ComponentConfigurationException(
 					"There was a problem evaluating: ${project.runtimeClasspathElements}",
 					e);
 		}
 
-		ClassRealm classRealm;
+		 Set artifacts = project.getDependencyArtifacts();
+		   for (Iterator artifactIterator = artifacts.iterator(); artifactIterator.hasNext();) {
+			   
+			   Artifact artifact = (Artifact) artifactIterator.next();
+			 //if (artifact.getGroupId().equals(dependency.getGroupId()) && artifact.getArtifactId().equals(dependency.getArtifactId())) {
+			   try
+			{
+				containerRealm.addConstituent(artifact.getFile().toURL());
+			} catch (MalformedURLException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			 //}
+		   }
+		
 		// Add the project dependencies to the ClassRealm
 		final URL[] urls = buildURLs(runtimeClasspathElements);
 		for (URL url : urls) {
