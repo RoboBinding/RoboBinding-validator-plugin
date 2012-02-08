@@ -145,7 +145,7 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 		assertNull(errorMessage)
 	}
 	
-	def void test_givenAndroidViewWithValidAttributes_whenValidatingView_thenAccept() {
+	def void test_givenAndroidViewWithValidAttributes_whenValidatingView_thenReturnEmptyErrorMessage() {
 		def view = Mockito.mock(View.class)
 		def attributes = [:]
 		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
@@ -156,7 +156,7 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 		assertTrue(errorMessage.size() == 0)
 	}
 	
-	def void test_givenAndroidViewWithInvalidAttributes_whenValidatingView_thenAccept() {
+	def void test_givenAndroidViewWithInvalidAttributes_whenValidatingView_thenReturnErrorMessage() {
 		def view = Mockito.mock(View.class)
 		def attributes = [:]
 		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
