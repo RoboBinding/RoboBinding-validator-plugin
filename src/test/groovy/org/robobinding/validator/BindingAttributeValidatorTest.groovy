@@ -21,12 +21,13 @@ import org.robobinding.binder.BindingAttributeProcessor
 import android.util.AttributeSet
 import android.view.View
 
+
 /**
-*
-* @since 1.0
-* @version $Revision: 1.0 $
-* @author Robert Taylor
-*/
+ *
+ * @since 1.0
+ * @version $Revision: 1.0 $
+ * @author Robert Taylor
+ */
 class BindingAttributeValidatorTest extends GroovyTestCase {
 
 	private static final String TEMP_PATH = "."
@@ -148,8 +149,7 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 	def void test_givenAndroidViewWithValidAttributes_whenValidatingView_thenReturnEmptyErrorMessage() {
 		def view = Mockito.mock(View.class)
 		def attributes = [:]
-		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
-		validator.bindingAttributeProcessor = bindingAttributeProcessor
+		mockBindingAttributeProcessor()
 		
 		def errorMessage = validator.validateView(view, attributes)
 		
@@ -159,13 +159,21 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 	def void test_givenAndroidViewWithInvalidAttributes_whenValidatingView_thenReturnErrorMessage() {
 		def view = Mockito.mock(View.class)
 		def attributes = [:]
-		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
-		validator.bindingAttributeProcessor = bindingAttributeProcessor
-		Mockito.doThrow(new RuntimeException()).when(bindingAttributeProcessor).process(org.mockito.Matchers.any(View.class), org.mockito.Matchers.any(AttributeSet.class))
+		mockFailingBindingAttributeProcessor()
 		
 		def errorMessage = validator.validateView(view, attributes)
 		
 		assertTrue(errorMessage.size() > 0)
+	}
+	
+	def mockBindingAttributeProcessor() {
+		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
+		validator.bindingAttributeProcessor = bindingAttributeProcessor
+	}
+	
+	def mockFailingBindingAttributeProcessor() {
+		mockBindingAttributeProcessor()
+		Mockito.doThrow(new RuntimeException()).when(validator.bindingAttributeProcessor).process(org.mockito.Matchers.any(View.class), org.mockito.Matchers.any(AttributeSet.class))
 	}
 	
 	def void setUp() {
