@@ -2,7 +2,6 @@ package org.robobinding.validator
 
 import groovy.lang.Closure
 
-import org.apache.maven.plugin.MojoFailureException
 import org.robobinding.binder.BindingAttributeProcessor
 import org.robobinding.binder.ViewNameResolver
 
@@ -34,26 +33,15 @@ class BindingAttributeValidator {
 					   getBindingAttributeProcessor().process(view, attributes)
 				   }
 				   catch (RuntimeException e) {
-					   errorMessages << "\n\n${fullyQualifiedViewName} in ${xmlFile.name} has binding errors:\n\n${e.message}"
+					   errorMessages << "${fullyQualifiedViewName} in ${xmlFile.name} has binding errors:\n\n${e.message}"
 				   }
 			   }
 		   }
 	   }
 	   
-	   if (errorMessages)
-		   throw new MojoFailureException(describe(errorMessages))
+	   errorMessages
    }
 
-   def describe(errorMessages) {
-	   def message
-	   
-	   errorMessages.each {
-		   message += "\n\n${it}"
-	   }
-	   
-	   message
-   }
-   
    def inEachLayoutFolder (Closure c) {
 	   resFolder.eachDirMatch(~/[layout].*/) {
 		   c.call(it)

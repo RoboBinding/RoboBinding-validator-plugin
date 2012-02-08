@@ -15,8 +15,8 @@
  */
 package org.robobinding.validator.mojo
 
+import org.apache.maven.plugin.MojoFailureException
 import org.codehaus.groovy.maven.mojo.GroovyMojo
-import org.robobinding.binder.BindingAttributeProcessor
 import org.robobinding.validator.BindingAttributeValidator
 
 /**
@@ -41,8 +41,21 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 	{
 		log.info("Validating binding attributes...")
 		
-		new BindingAttributeValidator(baseFolder).validate()
+		def errorMessages = new BindingAttributeValidator(baseFolder).validate()
+		
+		if (errorMessages)
+		   throw new MojoFailureException(describe(errorMessages))
 		
 		log.info("Done!")
+	}
+	
+	def describe(errorMessages) {
+		def message
+		
+		errorMessages.each {
+			message += "\n\n${it}"
+		}
+		
+		message
 	}
 }
