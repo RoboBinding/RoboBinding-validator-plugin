@@ -19,7 +19,7 @@ import org.mockito.Mockito
 import org.robobinding.binder.BindingAttributeProcessor
 
 import android.util.AttributeSet
-import android.widget.TextView
+import android.view.View
 
 /**
 *
@@ -146,27 +146,26 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 	}
 	
 	def void test_givenAndroidViewWithValidAttributes_whenValidatingView_thenAccept() {
-		def view = "java.lang.String"
-		def attributes = Mockito.mock(AttributeSet.class)
+		def view = Mockito.mock(View.class)
+		def attributes = [:]
 		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
 		validator.bindingAttributeProcessor = bindingAttributeProcessor
 		
 		def errorMessage = validator.validateView(view, attributes)
 		
-		assertNull(errorMessage)
+		assertTrue(errorMessage.size() == 0)
 	}
 	
 	def void test_givenAndroidViewWithInvalidAttributes_whenValidatingView_thenAccept() {
-		def view = Mockito.mock(TextView.class)
-		def bindingErrorMessage = "Error whilst binding"
-		def attributes = Mockito.mock(AttributeSet.class)
+		def view = Mockito.mock(View.class)
+		def attributes = [:]
 		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
-		Mockito.doThrow(new RuntimeException(bindingErrorMessage)).when(bindingAttributeProcessor).process(org.mockito.Matchers.eq(view), org.mockito.Matchers.any(AttributeSet.class))
 		validator.bindingAttributeProcessor = bindingAttributeProcessor
+		Mockito.doThrow(new RuntimeException()).when(bindingAttributeProcessor).process(org.mockito.Matchers.any(View.class), org.mockito.Matchers.any(AttributeSet.class))
 		
 		def errorMessage = validator.validateView(view, attributes)
 		
-		assertEquals(errorMessage, bindingErrorMessage)
+		assertTrue(errorMessage.size() > 0)
 	}
 	
 	def void setUp() {
