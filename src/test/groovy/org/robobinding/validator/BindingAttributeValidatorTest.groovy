@@ -13,11 +13,12 @@
 * See the License for the specific language governing permissions
 * and limitations under the License.
 */
-package org.robobinding
+package org.robobinding.validator
 
 import org.mockito.Mockito;
 import org.robobinding.binder.BindingAttributeProcessor
 import org.robobinding.customview.BindableView;
+import org.robobinding.validator.mojo.BindingAttributeValidatorMojo;
 
 /**
 *
@@ -25,11 +26,11 @@ import org.robobinding.customview.BindableView;
 * @version $Revision: 1.0 $
 * @author Robert Taylor
 */
-class BindingAttributeValidatorMojoTest extends GroovyTestCase {
+class BindingAttributeValidatorTest extends GroovyTestCase {
 
 	private static final String TEMP_PATH = "."
 	
-	def validatorMojo
+	def validator
 	def resFolder
 	def layoutFoldersCount
 	def xmlFilesCount
@@ -38,7 +39,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 		createLayoutFolders()
 
 		def layoutFoldersProcessed = 0
-		validatorMojo.inEachLayoutFolder { folder ->
+		validator.inEachLayoutFolder { folder ->
 			
 			assertTrue(folder.isDirectory())
 			layoutFoldersProcessed++
@@ -51,7 +52,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 		createLayoutXmlFiles()
 
 		def xmlFilesProcessed = 0
-		validatorMojo.inEachXmlFile(resFolder) { file ->
+		validator.inEachXmlFile(resFolder) { file ->
 			
 			assertTrue(file.isFile())
 			xmlFilesProcessed++
@@ -68,7 +69,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 					xmlns:bind="http://robobinding.org/android"
 					android:orientation="horizontal"></LinearLayout>'''
 		
-		assertNotNull validatorMojo.getRoboBindingNamespaceDeclaration(xmlWithRoboBindingNamespaceDeclaration)
+		assertNotNull validator.getRoboBindingNamespaceDeclaration(xmlWithRoboBindingNamespaceDeclaration)
 	}
 	
 	def void test_givenXmlDoesNotContainRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnNull() {
@@ -78,7 +79,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 					xmlns:android="http://schemas.android.com/apk/res/android"
 					android:orientation="horizontal"></LinearLayout>'''
 		
-		assertNull validatorMojo.getRoboBindingNamespaceDeclaration(xmlWithoutRoboBindingNamespaceDeclaration)
+		assertNull validator.getRoboBindingNamespaceDeclaration(xmlWithoutRoboBindingNamespaceDeclaration)
 	}
 	
 	def void test_givenXmlWithBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
@@ -95,7 +96,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 			</LinearLayout>'''
 		
 		def viewFound, attributesFound
-		validatorMojo.forEachViewWithBindingAttributes(xml) {viewName, attributes ->
+		validator.forEachViewWithBindingAttributes(xml) {viewName, attributes ->
 			viewFound = viewName
 			attributesFound = attributes
 		}
@@ -125,7 +126,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 		
 		def viewsFound = []
 		def attributesFound = [:]
-		validatorMojo.forEachViewWithBindingAttributes(xml) {viewName, attributes ->
+		validator.forEachViewWithBindingAttributes(xml) {viewName, attributes ->
 			viewsFound << viewName
 			attributesFound[viewName] = attributes
 		}
@@ -138,8 +139,7 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 		resFolder = new File("${TEMP_PATH}/res")
 		resFolder.mkdir()
 		
-		validatorMojo = new BindingAttributeValidatorMojo()
-		validatorMojo.baseFolder = new File(TEMP_PATH)
+		validator = new BindingAttributeValidator(new File(TEMP_PATH))
 	}
 	
 	def createLayoutFolders() {
