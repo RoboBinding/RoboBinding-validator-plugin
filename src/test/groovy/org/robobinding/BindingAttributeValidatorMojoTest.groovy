@@ -15,7 +15,9 @@
 */
 package org.robobinding
 
+import org.mockito.Mockito;
 import org.robobinding.binder.BindingAttributeProcessor
+import org.robobinding.customview.BindableView;
 
 /**
 *
@@ -130,16 +132,6 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 		
 		assertEquals (["RadioGroup", "RadioButton"], viewsFound)
 		assertEquals ([RadioGroup: [enabled:"{enabled}"], RadioButton: [visibility:"{visible}"]], attributesFound)
-	}
-	
-	def testInvokingBindingProcessor() {
-		
-		
-//		BindingAttributeProcessor bindingAttributeProcessor = new BindingAttributeProcessor(null, true)
-//		bindingAttributeProcessor.process(org.mockito.Mockito.mock(View.class), [:])
-//		
-//		println "Success"
-//		fail()
 	}
 	
 	def void setUp() {

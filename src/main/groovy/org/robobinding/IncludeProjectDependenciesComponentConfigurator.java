@@ -36,8 +36,6 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
  */
 public class IncludeProjectDependenciesComponentConfigurator extends
 		AbstractComponentConfigurator {
-	// private static final Logger LOGGER =
-	// Logger.getLogger(IncludeProjectDependenciesComponentConfigurator.class);
 
    protected MavenProject project;
 	
@@ -63,11 +61,7 @@ public class IncludeProjectDependenciesComponentConfigurator extends
 	private void addProjectDependenciesToClassRealm(
 			ExpressionEvaluator expressionEvaluator, ClassRealm containerRealm)
 			throws ComponentConfigurationException {
-		List<String> runtimeClasspathElements;
 		try {
-			// noinspection unchecked
-			runtimeClasspathElements = (List<String>) expressionEvaluator
-					.evaluate("${project.runtimeClasspathElements}");
 			project = (MavenProject)expressionEvaluator
 					.evaluate("${project}");
 		} catch (ExpressionEvaluationException e) {
@@ -76,49 +70,27 @@ public class IncludeProjectDependenciesComponentConfigurator extends
 					e);
 		}
 
-		 Set artifacts = project.getDependencyArtifacts();
-		   for (Iterator artifactIterator = artifacts.iterator(); artifactIterator.hasNext();) {
-			   
-			   Artifact artifact = (Artifact) artifactIterator.next();
-			 //if (artifact.getGroupId().equals(dependency.getGroupId()) && artifact.getArtifactId().equals(dependency.getArtifactId())) {
-			   try
-			{
-				containerRealm.addConstituent(artifact.getFile().toURL());
-			} catch (MalformedURLException e)
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			 //}
-		   }
-		
-		// Add the project dependencies to the ClassRealm
-		final URL[] urls = buildURLs(runtimeClasspathElements);
+		List<URL> urls = getProjectDependencies(project);
 		for (URL url : urls) {
 			containerRealm.addConstituent(url);
 		}
 	}
 
-	private URL[] buildURLs(List<String> runtimeClasspathElements)
-			throws ComponentConfigurationException {
-		// Add the projects classes and dependencies
-		List<URL> urls = new ArrayList<URL>(runtimeClasspathElements.size());
-		for (String element : runtimeClasspathElements) {
-			try {
-				final URL url = new File(element).toURI().toURL();
-				urls.add(url);
-				System.out.println("Added to project class loader: " + url);
-				// if (LOGGER.isDebugEnabled()) {
-				// LOGGER.debug("Added to project class loader: " + url);
-				// }
-			} catch (MalformedURLException e) {
-				throw new ComponentConfigurationException(
-						"Unable to access project dependency: " + element, e);
-			}
-		}
-
-		// Add the plugin's dependencies (so Trove stuff works if Trove isn't on
-		return urls.toArray(new URL[urls.size()]);
+	private List<URL> getProjectDependencies(MavenProject project) {
+		
+		List<URL> projectDependencyURLs = new ArrayList<URL>();
+		
+		try
+		{
+		for (Object path : project.getRuntimeClasspathElements())
+			projectDependencyURLs.add(new File((String)path).toURI().toURL());
+		
+		for (Object artifact : project.getDependencyArtifacts())
+			projectDependencyURLs.add(((Artifact)artifact).getFile().toURI().toURL());
+		
+		} catch (Exception e){}
+		
+		return projectDependencyURLs;
 	}
-
+	
 }

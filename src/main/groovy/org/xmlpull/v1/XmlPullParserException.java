@@ -8,6 +8,7 @@ package org.xmlpull.v1;
  *
  * @author <a href="http://www.extreme.indiana.edu/~aslom/">Aleksander Slominski</a>
  */
+@SuppressWarnings("serial")
 public class XmlPullParserException extends Exception {
     protected Throwable detail;
     protected int row = -1;

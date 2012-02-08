@@ -100,6 +100,10 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 			inEachXmlFileWithBindings(it) { xmlFile ->
 				forEachViewWithBindingAttributes(xmlFile.text) { viewName, attributes ->
 					def fullyQualifiedViewName = new ViewNameResolver().getViewNameFromLayoutTag(viewName)
+					
+					if (!fullyQualifiedViewName.startsWith("android"))
+						return
+					
 					Class viewClass = Class.forName(fullyQualifiedViewName)
 					def view = org.mockito.Mockito.mock(viewClass)
 					
@@ -107,7 +111,7 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 						getBindingAttributeProcessor().process(view, attributes)
 					}
 					catch (RuntimeException e) {
-						throw new MojoFailureException("\n\n${fullyQualifiedViewName} in ${xmlFile.name} has binding errors:\n\n${e.message}")
+						//throw new MojoFailureException("\n\n${fullyQualifiedViewName} in ${xmlFile.name} has binding errors:\n\n${e.message}")
 						errorMessages << "\n\n${fullyQualifiedViewName} in ${xmlFile.name} has binding errors:\n\n${e.message}"
 					}
 				}
