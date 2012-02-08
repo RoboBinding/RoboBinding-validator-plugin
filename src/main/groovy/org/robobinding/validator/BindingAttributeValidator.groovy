@@ -28,10 +28,14 @@ import org.robobinding.binder.ViewNameResolver
  */
 class BindingAttributeValidator {
 
+	static final def LAYOUT_FOLDER = ~/[layout].*/
+	static final def XML_FILE = ~/.*[.xml]/
+	static final def ROBOBINDING_NAMESPACE = 'http://robobinding.org/android'
+	
 	def resFolder
 	def bindingAttributeProcessor
 	def viewNameResolver
-
+	
 	BindingAttributeValidator(baseFolder) {
 		resFolder = new File(baseFolder, "res")
 		viewNameResolver = new ViewNameResolver()
@@ -60,11 +64,11 @@ class BindingAttributeValidator {
 	}
 
 	def inEachLayoutFolder (Closure c) {
-		resFolder.eachDirMatch(~/[layout].*/) { c.call(it) }
+		resFolder.eachDirMatch(LAYOUT_FOLDER) { c.call(it) }
 	}
 
 	def inEachXmlFile(folder, Closure c) {
-		folder.eachFileMatch(~/.*[.xml]/) { c.call(it) }
+		folder.eachFileMatch(XML_FILE) { c.call(it) }
 	}
 
 	def inEachXmlFileWithBindings(folder, Closure c) {
@@ -86,7 +90,7 @@ class BindingAttributeValidator {
 		def namespaceDeclarations = namespaceTagHints.get(rootNode)
 
 		for (String name : namespaceDeclarations.keySet()) {
-			if (namespaceDeclarations.get(name) == 'http://robobinding.org/android') {
+			if (namespaceDeclarations.get(name) == ROBOBINDING_NAMESPACE) {
 				return name
 			}
 		}
@@ -109,7 +113,7 @@ class BindingAttributeValidator {
 		attributeNamespacesField.setAccessible(true)
 		def attributeNamespaces = attributeNamespacesField.get(node)
 
-		def bindingAttributes = attributeNamespaces.findAll { it.value == 'http://robobinding.org/android' }
+		def bindingAttributes = attributeNamespaces.findAll { it.value == ROBOBINDING_NAMESPACE }
 		def bindingAttributeNames = bindingAttributes*.key
 		c.call(viewName, viewAttributes.subMap(bindingAttributeNames))
 
