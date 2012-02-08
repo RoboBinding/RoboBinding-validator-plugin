@@ -17,8 +17,11 @@ package org.robobinding.validator
 
 import groovy.lang.Closure
 
+import org.mockito.Mockito
 import org.robobinding.binder.BindingAttributeProcessor
 import org.robobinding.binder.ViewNameResolver
+
+import android.view.View
 
 /**
  *
@@ -50,11 +53,11 @@ class BindingAttributeValidator {
 				
 				forEachViewWithBindingAttributes(xmlFile.text) { viewName, attributes ->
 
-					def fullyQualifiedViewName = getFullQualifiedViewName(viewName)
+					def fullyQualifiedViewName = getFullyQualifiedViewName(viewName)
 					def errorMessage = validateView(fullyQualifiedViewName, attributes)
 
 					if (errorMessage)
-						errorMessages << errorMessage
+						errorMessages << "${xmlFile.name}: ${errorMessage}"
 						
 				}
 			}
@@ -120,25 +123,33 @@ class BindingAttributeValidator {
 		viewNode.children().each { processViewNode(it, c) }
 	}
 
-	def getFullQualifiedViewName(viewName) {
+	def getFullyQualifiedViewName(viewName) {
 		viewNameResolver.getViewNameFromLayoutTag(viewName)
 	}
 
-	def validateView(fullyQualifiedViewName, attributes) {
+	def validateView(String fullyQualifiedViewName, attributes) {
 		if (!fullyQualifiedViewName.startsWith("android"))
 			return
 
+		return validateView(instanceOf(fullyQualifiedViewName), attributes)
+	}
+	
+	def validateView(View view, attributes) {
+		def errorMessage = ""
+
 		try {
-			getBindingAttributeProcessor().process(instanceOf(fullyQualifiedViewName), attributes)
+			getBindingAttributeProcessor().process(view, attributes)
 		}
 		catch (RuntimeException e) {
-			return "${fullyQualifiedViewName} in ${xmlFile.name} has binding errors:\n\n${e.message}"
+			errorMessage = "${view.class.name} has binding errors:\n\n${e.message}"
 		}
+		
+		errorMessage
 	}
 
 	def instanceOf(fullyQualifiedViewName) {
 		Class viewClass = Class.forName(fullyQualifiedViewName)
-		org.mockito.Mockito.mock(viewClass)
+		Mockito.mock(viewClass)
 	}
 	
 	def getBindingAttributeProcessor() {

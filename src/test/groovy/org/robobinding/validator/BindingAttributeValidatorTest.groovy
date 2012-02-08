@@ -15,10 +15,11 @@
 */
 package org.robobinding.validator
 
-import org.mockito.Mockito;
+import org.mockito.Mockito
 import org.robobinding.binder.BindingAttributeProcessor
-import org.robobinding.customview.BindableView;
-import org.robobinding.validator.mojo.BindingAttributeValidatorMojo;
+
+import android.util.AttributeSet
+import android.widget.TextView
 
 /**
 *
@@ -133,6 +134,39 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 		
 		assertEquals (["RadioGroup", "RadioButton"], viewsFound)
 		assertEquals ([RadioGroup: [enabled:"{enabled}"], RadioButton: [visibility:"{visible}"]], attributesFound)
+	}
+	
+	def void test_givenCustomView_whenValidatingView_thenAccept() {
+		def view = "org.robobinding.CustomView"
+		def attributes = Mockito.mock(AttributeSet.class)
+		
+		def errorMessage = validator.validateView(view, attributes)
+		
+		assertNull(errorMessage)
+	}
+	
+	def void test_givenAndroidViewWithValidAttributes_whenValidatingView_thenAccept() {
+		def view = "java.lang.String"
+		def attributes = Mockito.mock(AttributeSet.class)
+		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
+		validator.bindingAttributeProcessor = bindingAttributeProcessor
+		
+		def errorMessage = validator.validateView(view, attributes)
+		
+		assertNull(errorMessage)
+	}
+	
+	def void test_givenAndroidViewWithInvalidAttributes_whenValidatingView_thenAccept() {
+		def view = Mockito.mock(TextView.class)
+		def bindingErrorMessage = "Error whilst binding"
+		def attributes = Mockito.mock(AttributeSet.class)
+		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
+		Mockito.doThrow(new RuntimeException(bindingErrorMessage)).when(bindingAttributeProcessor).process(org.mockito.Matchers.eq(view), org.mockito.Matchers.any(AttributeSet.class))
+		validator.bindingAttributeProcessor = bindingAttributeProcessor
+		
+		def errorMessage = validator.validateView(view, attributes)
+		
+		assertEquals(errorMessage, bindingErrorMessage)
 	}
 	
 	def void setUp() {
