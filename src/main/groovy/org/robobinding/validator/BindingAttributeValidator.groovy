@@ -131,7 +131,12 @@ class BindingAttributeValidator {
 		if (!fullyQualifiedViewName.startsWith("android"))
 			return
 
-		return validateView(instanceOf(fullyQualifiedViewName), attributes)
+		def errorMessage = validateView(instanceOf(fullyQualifiedViewName), attributes)
+	
+		if (errorMessage)
+			errorMessage = "${fullyQualifiedViewName} has binding errors:\n\n${errorMessage}"
+			
+		errorMessage
 	}
 	
 	def validateView(View view, attributes) {
@@ -141,7 +146,7 @@ class BindingAttributeValidator {
 			getBindingAttributeProcessor().process(view, attributes)
 		}
 		catch (RuntimeException e) {
-			errorMessage = "${view.class.name} has binding errors:\n\n${e.message}"
+			errorMessage = "${e.message}"
 		}
 		
 		errorMessage
