@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.robobinding.validator.mojo
+package org.robobinding.plugins.validator.mojo
 
 import org.apache.maven.plugin.MojoFailureException
 import org.codehaus.groovy.maven.mojo.GroovyMojo
-import org.robobinding.validator.BindingAttributeValidator
+import org.robobinding.plugins.validator.BindingAttributeValidator
 import org.sonatype.plexus.build.incremental.BuildContext
 
 /**
