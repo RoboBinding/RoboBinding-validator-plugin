@@ -18,45 +18,19 @@ package org.robobinding.validator.mojo
 import org.apache.maven.plugin.MojoFailureException
 import org.codehaus.groovy.maven.mojo.GroovyMojo
 import org.robobinding.validator.BindingAttributeValidator
-import org.sonatype.plexus.build.incremental.BuildContext
+
 
 /**
  *
- * @goal validate-bindings
- * @phase compile
- * @configurator include-project-dependencies
- * 
  * @since 1.0
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class BindingAttributeValidatorMojo extends GroovyMojo
+class MojoFileChangeChecker
 {
-	/**
-	 * @parameter expression="${basedir}"
-	 * @required
-	 */
-	def baseFolder
+	def buildContext
 	
-	/** 
-	 * @component 
-	 */
-	private BuildContext buildContext;
-	
-	void execute()
-	{
-		log.info("Validating binding attributes...")
-		
-		def fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
-		def errorMessages = new BindingAttributeValidator(baseFolder, fileChangeChecker).validate()
-		
-		if (errorMessages)
-		   throw new MojoFailureException(describe(errorMessages))
-		
-		log.info("Done!")
-	}
-	
-	def describe(errorMessages) {
-		errorMessages.join("\n\n") + "\n\n"
+	def hasFileChangedSinceLastBuild(file) {
+		buildContext.hasDelta(file)
 	}
 }

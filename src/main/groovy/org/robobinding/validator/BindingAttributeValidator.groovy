@@ -38,9 +38,11 @@ class BindingAttributeValidator {
 	def resFolder
 	def bindingAttributeProcessor
 	def viewNameResolver
+	def fileChangeChecker
 	
-	BindingAttributeValidator(baseFolder) {
+	BindingAttributeValidator(baseFolder,fileChangeChecker) {
 		resFolder = new File(baseFolder, "res")
+		this.fileChangeChecker = fileChangeChecker
 		viewNameResolver = new ViewNameResolver()
 	}
 
@@ -49,16 +51,19 @@ class BindingAttributeValidator {
 
 		inEachLayoutFolder { layoutFolder ->
 			
-			inEachXmlFileWithBindingsInsideThe layoutFolder { xmlFile ->
+			inEachXmlFileWithBindingsInsideThe(layoutFolder) { xmlFile ->
 				
-				forEachViewWithBindingAttributesInThe xmlFile.text { viewName, attributes ->
-
-					def fullyQualifiedViewName = getFullyQualifiedViewName(viewName)
-					def errorMessage = validateView(fullyQualifiedViewName, attributes)
-
-					if (errorMessage)
-						errorMessages << "${xmlFile.name}: ${errorMessage}"
-						
+				if (fileChangeChecker.hasFileChangedSinceLastBuild(xmlFile)) {
+				
+					forEachViewWithBindingAttributesInThe(xmlFile.text) { viewName, attributes ->
+	
+						def fullyQualifiedViewName = getFullyQualifiedViewName(viewName)
+						def errorMessage = validateView(fullyQualifiedViewName, attributes)
+	
+						if (errorMessage)
+							errorMessages << "${xmlFile.name}: ${errorMessage}"
+							
+					}
 				}
 			}
 		}
@@ -163,4 +168,5 @@ class BindingAttributeValidator {
 
 		bindingAttributeProcessor
 	}
+	
 }

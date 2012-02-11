@@ -180,7 +180,7 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 		resFolder = new File("${TEMP_PATH}/res")
 		resFolder.mkdir()
 		
-		validator = new BindingAttributeValidator(new File(TEMP_PATH))
+		validator = new BindingAttributeValidator(new File(TEMP_PATH), [hasFileChangedSinceLastBuild: {Object[] args -> true}])
 	}
 	
 	def createLayoutFolders() {
