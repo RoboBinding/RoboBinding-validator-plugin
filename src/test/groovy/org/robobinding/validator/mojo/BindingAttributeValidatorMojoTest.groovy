@@ -36,6 +36,6 @@ class BindingAttributeValidatorMojoTest extends GroovyTestCase {
 		
 		def errorMessage = mojo.describe(errorMessages)
 		
-		assertEquals("\n\nerror1\n\nerror2\n\nerror3", errorMessage)
+		assertEquals("error1\n\nerror2\n\nerror3\n\n", errorMessage)
 	}
 }

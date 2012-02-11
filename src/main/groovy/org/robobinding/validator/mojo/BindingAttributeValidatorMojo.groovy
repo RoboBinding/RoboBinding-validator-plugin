@@ -50,12 +50,6 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 	}
 	
 	def describe(errorMessages) {
-		def message = ""
-		
-		errorMessages.each {
-			message += "\n\n${it}"
-		}
-		
-		message
+		errorMessages.join("\n\n") + "\n\n"
 	}
 }

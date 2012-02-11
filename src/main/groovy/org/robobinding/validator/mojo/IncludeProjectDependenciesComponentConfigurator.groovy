@@ -78,7 +78,8 @@ class IncludeProjectDependenciesComponentConfigurator extends AbstractComponentC
 		}
 		
 		project.dependencyArtifacts.each { artifact ->
-			projectDependencyURLs << artifact.file.toURI().toURL()
+			if (artifact.file)
+				projectDependencyURLs << artifact.file.toURI().toURL()
 		}
 		
 		projectDependencyURLs

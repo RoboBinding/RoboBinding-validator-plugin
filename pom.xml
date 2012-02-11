@@ -4,7 +4,7 @@
 	<groupId>org.robobinding</groupId>
 	<artifactId>robobinding-validator</artifactId>
 	<packaging>maven-plugin</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>0.9.6-SNAPSHOT</version>
 	<name>RoboBinding validator plugin</name>
 	<url>http://robobinding.org</url>
 
@@ -85,7 +85,7 @@
 			<plugin>
 				<groupId>org.codehaus.gmaven</groupId>
 				<artifactId>gmaven-plugin</artifactId>
-				<version>1.2</version>
+				<version>1.4</version>
 				<configuration>
 					<providerSelection>1.6</providerSelection>
 				</configuration>
@@ -149,9 +149,7 @@
 										<goals>
 											<goal>compile</goal>
 											<goal>testCompile</goal>
-											<goal>
-												generateTestStubs
-											</goal>
+											<goal>generateTestStubs</goal>
 											<goal>generateStubs</goal>
 										</goals>
 									</pluginExecutionFilter>
