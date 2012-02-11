@@ -98,7 +98,7 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 			</LinearLayout>'''
 		
 		def viewFound, attributesFound
-		validator.forEachViewWithBindingAttributes(xml) {viewName, attributes ->
+		validator.forEachViewWithBindingAttributesInThe(xml) {viewName, attributes ->
 			viewFound = viewName
 			attributesFound = attributes
 		}
@@ -128,7 +128,7 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 		
 		def viewsFound = []
 		def attributesFound = [:]
-		validator.forEachViewWithBindingAttributes(xml) {viewName, attributes ->
+		validator.forEachViewWithBindingAttributesInThe(xml) {viewName, attributes ->
 			viewsFound << viewName
 			attributesFound[viewName] = attributes
 		}

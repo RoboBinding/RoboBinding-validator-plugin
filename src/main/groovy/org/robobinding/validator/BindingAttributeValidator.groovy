@@ -49,9 +49,9 @@ class BindingAttributeValidator {
 
 		inEachLayoutFolder { layoutFolder ->
 			
-			inEachXmlFileWithBindings(layoutFolder) { xmlFile ->
+			inEachXmlFileWithBindingsInsideThe layoutFolder { xmlFile ->
 				
-				forEachViewWithBindingAttributes(xmlFile.text) { viewName, attributes ->
+				forEachViewWithBindingAttributesInThe xmlFile.text { viewName, attributes ->
 
 					def fullyQualifiedViewName = getFullyQualifiedViewName(viewName)
 					def errorMessage = validateView(fullyQualifiedViewName, attributes)
@@ -74,7 +74,7 @@ class BindingAttributeValidator {
 		folder.eachFileMatch(XML_FILE) { c.call(it) }
 	}
 
-	def inEachXmlFileWithBindings(folder, Closure c) {
+	def inEachXmlFileWithBindingsInsideThe(folder, Closure c) {
 		inEachXmlFile(folder) {
 			if (getRoboBindingNamespaceDeclaration(it.text)) {
 				c.call(it)
@@ -99,7 +99,7 @@ class BindingAttributeValidator {
 		}
 	}
 
-	def forEachViewWithBindingAttributes(xml, Closure c) {
+	def forEachViewWithBindingAttributesInThe(xml, Closure c) {
 		def rootNode = new XmlSlurper().parseText(xml)
 
 		rootNode.children().each { processViewNode(it, c) }
