@@ -34,15 +34,17 @@ class BindingAttributeValidator {
 	static final def LAYOUT_FOLDER = ~/[layout].*/
 	static final def XML_FILE = ~/.*[.xml]/
 	static final def ROBOBINDING_NAMESPACE = 'http://robobinding.org/android'
-	
+
 	def resFolder
 	def bindingAttributeProcessor
-	def viewNameResolver
 	def fileChangeChecker
-	
-	BindingAttributeValidator(baseFolder,fileChangeChecker) {
+	def errorReporter
+	def viewNameResolver
+
+	BindingAttributeValidator(baseFolder,fileChangeChecker,errorReporter) {
 		resFolder = new File(baseFolder, "res")
 		this.fileChangeChecker = fileChangeChecker
+		this.errorReporter = errorReporter
 		viewNameResolver = new ViewNameResolver()
 	}
 
@@ -50,19 +52,21 @@ class BindingAttributeValidator {
 		def errorMessages = []
 
 		inEachLayoutFolder { layoutFolder ->
-			
-			inEachXmlFileWithBindingsInsideThe(layoutFolder) { xmlFile ->
+
+			inEachXmlFileWithBindingsThatHasChangedInsideThe(layoutFolder) { xmlFile ->
+
+				errorReporter.clearErrorsFor(xmlFile)
 				
-				if (fileChangeChecker.hasFileChangedSinceLastBuild(xmlFile)) {
-				
-					forEachViewWithBindingAttributesInThe(xmlFile.text) { viewName, attributes ->
-	
-						def fullyQualifiedViewName = getFullyQualifiedViewName(viewName)
-						def errorMessage = validateView(fullyQualifiedViewName, attributes)
-	
-						if (errorMessage)
-							errorMessages << "${xmlFile.name}: ${errorMessage}"
-							
+				forEachViewWithBindingAttributesInThe(xmlFile.text) { viewName, attributes ->
+
+					def fullyQualifiedViewName = getFullyQualifiedViewName(viewName)
+					def errorMessage = validateView(fullyQualifiedViewName, attributes)
+
+					if (errorMessage) {
+						errorMessages << "${xmlFile.name}: ${errorMessage}"
+						
+						int lineNumber = 1
+						errorReporter.errorIn(xmlFile, lineNumber, errorMessage)
 					}
 				}
 			}
@@ -79,10 +83,12 @@ class BindingAttributeValidator {
 		folder.eachFileMatch(XML_FILE) { c.call(it) }
 	}
 
-	def inEachXmlFileWithBindingsInsideThe(folder, Closure c) {
+	def inEachXmlFileWithBindingsThatHasChangedInsideThe(folder, Closure c) {
 		inEachXmlFile(folder) {
-			if (getRoboBindingNamespaceDeclaration(it.text)) {
-				c.call(it)
+			if (fileChangeChecker.hasFileChangedSinceLastBuild(it)) {
+				if (getRoboBindingNamespaceDeclaration(it.text)) {
+					c.call(it)
+				}
 			}
 		}
 	}
@@ -97,7 +103,9 @@ class BindingAttributeValidator {
 
 		def namespaceDeclarations = namespaceTagHintsField.get(rootNode)
 
-		return namespaceDeclarations.find {key, value -> value == ROBOBINDING_NAMESPACE}?.key
+		return namespaceDeclarations.find { key, value ->
+			value == ROBOBINDING_NAMESPACE
+		}?.key
 	}
 
 	def forEachViewWithBindingAttributesInThe(xml, Closure c) {
@@ -130,13 +138,13 @@ class BindingAttributeValidator {
 			return
 
 		def errorMessage = validateView(instanceOf(fullyQualifiedViewName), attributes)
-	
+
 		if (errorMessage)
 			errorMessage = "${fullyQualifiedViewName} has binding errors:\n\n${errorMessage}"
-			
+
 		errorMessage
 	}
-	
+
 	def validateView(View view, attributes) {
 		def errorMessage = ""
 
@@ -146,7 +154,7 @@ class BindingAttributeValidator {
 		catch (RuntimeException e) {
 			errorMessage = "${e.message}"
 		}
-		
+
 		errorMessage
 	}
 
@@ -154,12 +162,11 @@ class BindingAttributeValidator {
 		Class viewClass = Class.forName(fullyQualifiedViewName)
 		Mockito.mock(viewClass)
 	}
-	
+
 	def getBindingAttributeProcessor() {
 		if (bindingAttributeProcessor == null)
 			bindingAttributeProcessor = new BindingAttributeProcessor(null, true)
 
 		bindingAttributeProcessor
 	}
-	
 }

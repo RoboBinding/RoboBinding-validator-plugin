@@ -48,7 +48,8 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 		log.info("Validating binding attributes...")
 		
 		def fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
-		def errorMessages = new BindingAttributeValidator(baseFolder, fileChangeChecker).validate()
+		def errorReporter = new MojoErrorReporter(buildContext: buildContext)
+		def errorMessages = new BindingAttributeValidator(baseFolder, fileChangeChecker, errorReporter).validate()
 		
 		if (errorMessages)
 		   throw new MojoFailureException(describe(errorMessages))
