@@ -92,16 +92,12 @@ class BindingAttributeValidator {
 
 		def xmlClass = rootNode.getClass()
 		def gpathClass = xmlClass.getSuperclass()
-		def namespaceTagHints = gpathClass.getDeclaredField("namespaceTagHints")
-		namespaceTagHints.setAccessible(true)
+		def namespaceTagHintsField = gpathClass.getDeclaredField("namespaceTagHints")
+		namespaceTagHintsField.setAccessible(true)
 
-		def namespaceDeclarations = namespaceTagHints.get(rootNode)
+		def namespaceDeclarations = namespaceTagHintsField.get(rootNode)
 
-		for (String name : namespaceDeclarations.keySet()) {
-			if (namespaceDeclarations.get(name) == ROBOBINDING_NAMESPACE) {
-				return name
-			}
-		}
+		return namespaceDeclarations.find {key, value -> value == ROBOBINDING_NAMESPACE}?.key
 	}
 
 	def forEachViewWithBindingAttributesInThe(xml, Closure c) {
@@ -117,11 +113,8 @@ class BindingAttributeValidator {
 		def nodeField = viewNode.getClass().getDeclaredField("node")
 		nodeField.setAccessible(true)
 		def node = nodeField.get(viewNode)
-		def attributeNamespacesField = node.getClass().getDeclaredField("attributeNamespaces")
-		attributeNamespacesField.setAccessible(true)
-		def attributeNamespaces = attributeNamespacesField.get(node)
 
-		def bindingAttributes = attributeNamespaces.findAll { it.value == ROBOBINDING_NAMESPACE }
+		def bindingAttributes = node.@attributeNamespaces.findAll { it.value == ROBOBINDING_NAMESPACE }
 		def bindingAttributeNames = bindingAttributes*.key
 		c.call(viewName, viewAttributes.subMap(bindingAttributeNames))
 
