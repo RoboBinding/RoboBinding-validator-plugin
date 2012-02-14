@@ -28,9 +28,11 @@ import org.sonatype.plexus.build.incremental.BuildContext;
 class MojoErrorReporter
 {
 	def buildContext
+	def errorMessages = []
 	
 	def errorIn(file,lineNumber,errorMessage) {
 		buildContext.addMessage(file, lineNumber, 0, errorMessage, BuildContext.SEVERITY_ERROR, null)
+		errorMessages << "${file.name} line $lineNumber: $errorMessage"
 	}
 	
 	def clearErrorsFor(file) {

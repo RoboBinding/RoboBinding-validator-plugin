@@ -49,10 +49,10 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 		
 		def fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
 		def errorReporter = new MojoErrorReporter(buildContext: buildContext)
-		def errorMessages = new BindingAttributeValidator(baseFolder, fileChangeChecker, errorReporter).validate()
+		new BindingAttributeValidator(baseFolder, fileChangeChecker, errorReporter).validate()
 		
-		if (errorMessages)
-		   throw new MojoFailureException(describe(errorMessages))
+		if (errorReporter.errorMessages)
+		   throw new MojoFailureException(describe(errorReporter.errorMessages))
 		
 		log.info("Done!")
 	}

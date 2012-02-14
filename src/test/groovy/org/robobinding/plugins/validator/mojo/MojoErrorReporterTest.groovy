@@ -30,17 +30,17 @@ class MojoErrorReporterTest extends GroovyTestCase {
 	def buildContext
 	def file
 	def mojoErrorReporter
+	def lineNumber = 13
+	
+	def errorMessage = "Error!"
 	
 	def void setUp() {
 		buildContext = Mockito.mock(BuildContext.class)
-		file = new File("")
+		file = new File("a_file.xml")
 		mojoErrorReporter = new MojoErrorReporter(buildContext: buildContext)
 	}
 	
 	def void test_whenReportingAnError_thenDelegateToBuildContext() {
-		
-		def lineNumber = 13
-		def errorMessage = "Error!"
 		
 		mojoErrorReporter.errorIn(file, lineNumber, errorMessage)
 		
@@ -52,5 +52,20 @@ class MojoErrorReporterTest extends GroovyTestCase {
 		mojoErrorReporter.clearErrorsFor(file)
 		
 		Mockito.verify(buildContext).removeMessages(file)
+	}
+	
+	def void test_whenReportingAnError_thenAddErrorToList() {
+		
+		def numberOfErrors = anyInt()
+		def expectedErrorMessages = []
+		numberOfErrors.times { expectedErrorMessages << "${file.name} line $lineNumber: $errorMessage" }
+		
+		numberOfErrors.times { mojoErrorReporter.errorIn(file, lineNumber, errorMessage) }
+		
+		assertEquals(expectedErrorMessages, mojoErrorReporter.errorMessages)
+	}
+	
+	def anyInt() {
+		return new Random().nextInt(10) + 1
 	}
 }

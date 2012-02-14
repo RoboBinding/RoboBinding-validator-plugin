@@ -19,7 +19,9 @@ import groovy.lang.Closure
 
 import org.mockito.Mockito
 import org.robobinding.binder.BindingAttributeProcessor
+import org.robobinding.binder.UnrecognizedBindingAttributeException;
 import org.robobinding.binder.ViewNameResolver
+import org.robobinding.viewattribute.MissingRequiredBindingAttributeException;
 
 import android.view.View
 
@@ -40,39 +42,41 @@ class BindingAttributeValidator {
 	def fileChangeChecker
 	def errorReporter
 	def viewNameResolver
-
+	def xmlLineNumberDecorator
+	
 	BindingAttributeValidator(baseFolder,fileChangeChecker,errorReporter) {
 		resFolder = new File(baseFolder, "res")
 		this.fileChangeChecker = fileChangeChecker
 		this.errorReporter = errorReporter
 		viewNameResolver = new ViewNameResolver()
+		xmlLineNumberDecorator = new XmlLineNumberDecorator()
 	}
 
 	def validate() {
-		def errorMessages = []
-
 		inEachLayoutFolder { layoutFolder ->
 
 			inEachXmlFileWithBindingsThatHasChangedInsideThe(layoutFolder) { xmlFile ->
 
 				errorReporter.clearErrorsFor(xmlFile)
 				
-				forEachViewWithBindingAttributesInThe(xmlFile.text) { viewName, attributes ->
+				forEachViewWithBindingAttributesInThe(xmlFile.text) { viewName, viewLineNumber, attributes, attributeLineNumbers ->
 
 					def fullyQualifiedViewName = getFullyQualifiedViewName(viewName)
-					def errorMessage = validateView(fullyQualifiedViewName, attributes)
 
-					if (errorMessage) {
-						errorMessages << "${xmlFile.name}: ${errorMessage}"
-						
-						int lineNumber = 1
-						errorReporter.errorIn(xmlFile, lineNumber, errorMessage)
+					try {
+						validateView(fullyQualifiedViewName, attributes)
+					}
+					catch (UnrecognizedBindingAttributeException e) {
+						e.unrecognizedBindingAttributes.each { key, value ->
+							errorReporter.errorIn(xmlFile, attributeLineNumbers[key], "Unrecognized binding attribute on $fullyQualifiedViewName: $key\n\n")
+						}
+					}
+					catch (MissingRequiredBindingAttributeException e) {
+						errorReporter.errorIn(xmlFile, viewLineNumber, "Missing required attribute(s) on $fullyQualifiedViewName: ${e.missingAttributes.join(', ')}\n\n")
 					}
 				}
 			}
 		}
-
-		errorMessages
 	}
 
 	def inEachLayoutFolder (Closure c) {
@@ -109,7 +113,10 @@ class BindingAttributeValidator {
 	}
 
 	def forEachViewWithBindingAttributesInThe(xml, Closure c) {
-		def rootNode = new XmlSlurper().parseText(xml)
+		def bindingPrefix = getRoboBindingNamespaceDeclaration(xml)
+		def decoratedXml = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
+		
+		def rootNode = new XmlSlurper().parseText(decoratedXml)
 
 		rootNode.children().each { processViewNode(it, c) }
 	}
@@ -124,7 +131,12 @@ class BindingAttributeValidator {
 
 		def bindingAttributes = node.@attributeNamespaces.findAll { it.value == ROBOBINDING_NAMESPACE }
 		def bindingAttributeNames = bindingAttributes*.key
-		c.call(viewName, viewAttributes.subMap(bindingAttributeNames))
+		def bindingAttributesMap = viewAttributes.subMap(bindingAttributeNames)
+		
+		def viewLineNumber = xmlLineNumberDecorator.getLineNumber(viewNode)
+		def (actualBindingAttributes, bindingAttributeLineNumbers) = xmlLineNumberDecorator.getBindingAttributeDetailsMaps(bindingAttributesMap)
+		
+		c.call(viewName, viewLineNumber, actualBindingAttributes, bindingAttributeLineNumbers)
 
 		viewNode.children().each { processViewNode(it, c) }
 	}
@@ -137,25 +149,8 @@ class BindingAttributeValidator {
 		if (!fullyQualifiedViewName.startsWith("android"))
 			return
 
-		def errorMessage = validateView(instanceOf(fullyQualifiedViewName), attributes)
-
-		if (errorMessage)
-			errorMessage = "${fullyQualifiedViewName} has binding errors:\n\n${errorMessage}"
-
-		errorMessage
-	}
-
-	def validateView(View view, attributes) {
-		def errorMessage = ""
-
-		try {
-			getBindingAttributeProcessor().process(view, attributes)
-		}
-		catch (RuntimeException e) {
-			errorMessage = "${e.message}"
-		}
-
-		errorMessage
+		def view = instanceOf(fullyQualifiedViewName)
+		getBindingAttributeProcessor().process(view, attributes)
 	}
 
 	def instanceOf(fullyQualifiedViewName) {
