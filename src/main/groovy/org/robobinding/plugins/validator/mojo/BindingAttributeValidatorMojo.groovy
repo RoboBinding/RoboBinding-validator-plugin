@@ -58,6 +58,6 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 	}
 	
 	def describe(errorMessages) {
-		errorMessages.join("\n\n") + "\n\n"
+		"${errorMessages.join('\n\n')}\n\n"
 	}
 }

@@ -19,7 +19,7 @@ import groovy.lang.Closure
 
 import org.mockito.Mockito
 import org.robobinding.binder.BindingAttributeProcessor
-import org.robobinding.binder.UnrecognizedBindingAttributeException;
+import org.robobinding.binder.BindingAttributeException;
 import org.robobinding.binder.ViewNameResolver
 import org.robobinding.viewattribute.MissingRequiredBindingAttributeException;
 
@@ -66,9 +66,12 @@ class BindingAttributeValidator {
 					try {
 						validateView(fullyQualifiedViewName, attributes)
 					}
-					catch (UnrecognizedBindingAttributeException e) {
+					catch (BindingAttributeException e) {
 						e.unrecognizedBindingAttributes.each { key, value ->
 							errorReporter.errorIn(xmlFile, attributeLineNumbers[key], "Unrecognized binding attribute on $fullyQualifiedViewName: $key\n\n")
+						}
+						e.malformedBindingAttributes.each { key, value ->
+							errorReporter.errorIn(xmlFile, attributeLineNumbers[key], value)
 						}
 					}
 					catch (MissingRequiredBindingAttributeException e) {
