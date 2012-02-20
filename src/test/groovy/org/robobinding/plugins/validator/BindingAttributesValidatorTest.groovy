@@ -138,8 +138,6 @@ class BindingAttributesValidatorTest extends GroovyTestCase {
 		assertEquals ([RadioGroup: [enabled:"{enabled}"], RadioButton: [visibility:"{visible}"]], attributesFound)
 	}
 	
-	//TODO add processViewNode test in BindingAttributesValidator
-	
 	def void setUp() {
 		resFolder = new File("${TEMP_PATH}/res")
 		resFolder.mkdir()
