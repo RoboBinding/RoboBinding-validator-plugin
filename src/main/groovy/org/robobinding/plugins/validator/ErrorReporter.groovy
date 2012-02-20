@@ -13,12 +13,7 @@
  * See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package org.robobinding.plugins.validator.mojo
-
-import org.robobinding.plugins.validator.ErrorReporter
-import org.sonatype.plexus.build.incremental.BuildContext
-
-
+package org.robobinding.plugins.validator
 
 /**
  *
@@ -26,17 +21,9 @@ import org.sonatype.plexus.build.incremental.BuildContext
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class MojoErrorReporter implements ErrorReporter
-{
-	def buildContext
-	def errorMessages = []
+interface ErrorReporter {
 	
-	def errorIn(file,lineNumber,errorMessage) {
-		buildContext.addMessage(file, lineNumber, 0, errorMessage, BuildContext.SEVERITY_ERROR, null)
-		errorMessages << "${file.name} line $lineNumber: $errorMessage"
-	}
+	def errorIn(file,lineNumber,errorMessage)
 	
-	def clearErrorsFor(file) {
-		buildContext.removeMessages(file)
-	}
+	def clearErrorsFor(file)
 }

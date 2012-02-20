@@ -28,7 +28,7 @@ import android.view.View
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class BindingAttributeValidatorTest extends GroovyTestCase {
+class BindingAttributesValidatorTest extends GroovyTestCase {
 
 	private static final String TEMP_PATH = "."
 	
@@ -36,6 +36,7 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 	def resFolder
 	def layoutFoldersCount
 	def xmlFilesCount
+	def errorsReported
 	
 	def void test_whenProcessingEachLayoutFolder_thenInvokeTheClosureOnEachFolder() {
 		createLayoutFolders()
@@ -98,9 +99,9 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 			</LinearLayout>'''
 		
 		def viewFound, attributesFound
-		validator.forEachViewWithBindingAttributesInThe(xml) {viewName, viewLineNumber, attributes, attributeLineNumbers ->
-			viewFound = viewName
-			attributesFound = attributes
+		validator.forEachViewWithBindingAttributesInThe([text: xml]) {viewAttributeDetails ->
+			viewFound = viewAttributeDetails.viewName
+			attributesFound = viewAttributeDetails.attributes
 		}
 		
 		assertEquals ("EditText", viewFound) 
@@ -128,59 +129,22 @@ class BindingAttributeValidatorTest extends GroovyTestCase {
 		
 		def viewsFound = []
 		def attributesFound = [:]
-		validator.forEachViewWithBindingAttributesInThe(xml) {viewName, viewLineNumber, attributes, attributeLineNumbers ->
-			viewsFound << viewName
-			attributesFound[viewName] = attributes
+		validator.forEachViewWithBindingAttributesInThe([text: xml]) {viewAttributeDetails ->
+			viewsFound << viewAttributeDetails.viewName
+			attributesFound[viewAttributeDetails.viewName] = viewAttributeDetails.attributes
 		}
 		
 		assertEquals (["RadioGroup", "RadioButton"], viewsFound)
 		assertEquals ([RadioGroup: [enabled:"{enabled}"], RadioButton: [visibility:"{visible}"]], attributesFound)
 	}
 	
-	def void test_givenCustomView_whenValidatingView_thenAccept() {
-		def view = "org.robobinding.CustomView"
-		def attributes = Mockito.mock(AttributeSet.class)
-		
-		def errorMessage = validator.validateView(view, attributes)
-		
-		assertNull(errorMessage)
-	}
-	
-//	def void test_givenAndroidViewWithValidAttributes_whenValidatingView_thenReturnEmptyErrorMessage() {
-//		def view = Mockito.mock(View.class)
-//		def attributes = [:]
-//		mockBindingAttributeProcessor()
-//		
-//		def errorMessage = validator.validateView(view, attributes)
-//		
-//		assertTrue(errorMessage.size() == 0)
-//	}
-//	
-//	def void test_givenAndroidViewWithInvalidAttributes_whenValidatingView_thenReturnErrorMessage() {
-//		def view = Mockito.mock(View.class)
-//		def attributes = [:]
-//		mockFailingBindingAttributeProcessor()
-//		
-//		def errorMessage = validator.validateView(view, attributes)
-//		
-//		assertTrue(errorMessage.size() > 0)
-//	}
-	
-	def mockBindingAttributeProcessor() {
-		def bindingAttributeProcessor = Mockito.mock(BindingAttributeProcessor.class)
-		validator.bindingAttributeProcessor = bindingAttributeProcessor
-	}
-	
-	def mockFailingBindingAttributeProcessor() {
-		mockBindingAttributeProcessor()
-		Mockito.doThrow(new RuntimeException()).when(validator.bindingAttributeProcessor).process(org.mockito.Matchers.any(View.class), org.mockito.Matchers.any(AttributeSet.class))
-	}
+	//TODO add processViewNode test in BindingAttributesValidator
 	
 	def void setUp() {
 		resFolder = new File("${TEMP_PATH}/res")
 		resFolder.mkdir()
 		
-		validator = new BindingAttributeValidator(new File(TEMP_PATH), [hasFileChangedSinceLastBuild: {Object[] args -> true}], [errorIn: {Object[] args -> println "Error reported"}])
+		validator = new BindingAttributesValidator(new File(TEMP_PATH), [hasFileChangedSinceLastBuild: {Object[] args -> true}], [errorIn: {Object[] args -> println "Error reported"}])
 	}
 	
 	def createLayoutFolders() {

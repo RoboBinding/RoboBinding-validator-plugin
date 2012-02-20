@@ -17,7 +17,7 @@ package org.robobinding.plugins.validator.mojo
 
 import org.apache.maven.plugin.MojoFailureException
 import org.codehaus.groovy.maven.mojo.GroovyMojo
-import org.robobinding.plugins.validator.BindingAttributeValidator
+import org.robobinding.plugins.validator.BindingAttributesValidator
 import org.sonatype.plexus.build.incremental.BuildContext
 
 /**
@@ -49,7 +49,7 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 		
 		def fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
 		def errorReporter = new MojoErrorReporter(buildContext: buildContext)
-		new BindingAttributeValidator(baseFolder, fileChangeChecker, errorReporter).validate()
+		new BindingAttributesValidator(baseFolder, fileChangeChecker, errorReporter).validate()
 		
 		if (errorReporter.errorMessages)
 		   throw new MojoFailureException(describe(errorReporter.errorMessages))

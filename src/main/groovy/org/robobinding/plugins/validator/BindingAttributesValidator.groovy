@@ -31,24 +31,21 @@ import android.view.View
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class BindingAttributeValidator {
+class BindingAttributesValidator {
 
 	static final def LAYOUT_FOLDER = ~/[layout].*/
 	static final def XML_FILE = ~/.*[.xml]/
 	static final def ROBOBINDING_NAMESPACE = 'http://robobinding.org/android'
 
 	def resFolder
-	def bindingAttributeProcessor
 	def fileChangeChecker
 	def errorReporter
-	def viewNameResolver
 	def xmlLineNumberDecorator
 	
-	BindingAttributeValidator(baseFolder,fileChangeChecker,errorReporter) {
+	BindingAttributesValidator(baseFolder,fileChangeChecker,errorReporter) {
 		resFolder = new File(baseFolder, "res")
 		this.fileChangeChecker = fileChangeChecker
 		this.errorReporter = errorReporter
-		viewNameResolver = new ViewNameResolver()
 		xmlLineNumberDecorator = new XmlLineNumberDecorator()
 	}
 
@@ -57,26 +54,9 @@ class BindingAttributeValidator {
 
 			inEachXmlFileWithBindingsThatHasChangedInsideThe(layoutFolder) { xmlFile ->
 
-				errorReporter.clearErrorsFor(xmlFile)
-				
-				forEachViewWithBindingAttributesInThe(xmlFile.text) { viewName, viewLineNumber, attributes, attributeLineNumbers ->
+				forEachViewWithBindingAttributesInThe(xmlFile) { viewBindingAttributes ->
 
-					def fullyQualifiedViewName = getFullyQualifiedViewName(viewName)
-
-					try {
-						validateView(fullyQualifiedViewName, attributes)
-					}
-					catch (BindingAttributeException e) {
-						e.unrecognizedBindingAttributes.each { key, value ->
-							errorReporter.errorIn(xmlFile, attributeLineNumbers[key], "Unrecognized binding attribute on $fullyQualifiedViewName: $key\n\n")
-						}
-						e.malformedBindingAttributes.each { key, value ->
-							errorReporter.errorIn(xmlFile, attributeLineNumbers[key], value)
-						}
-					}
-					catch (MissingRequiredBindingAttributeException e) {
-						errorReporter.errorIn(xmlFile, viewLineNumber, "Missing required attribute(s) on $fullyQualifiedViewName: ${e.missingAttributes.join(', ')}\n\n")
-					}
+					viewBindingAttributes.validate()
 				}
 			}
 		}
@@ -115,16 +95,17 @@ class BindingAttributeValidator {
 		}?.key
 	}
 
-	def forEachViewWithBindingAttributesInThe(xml, Closure c) {
+	def forEachViewWithBindingAttributesInThe(xmlFile, Closure c) {
+		def xml = xmlFile.text
 		def bindingPrefix = getRoboBindingNamespaceDeclaration(xml)
 		def decoratedXml = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
 		
 		def rootNode = new XmlSlurper().parseText(decoratedXml)
 
-		rootNode.children().each { processViewNode(it, c) }
+		rootNode.children().each { processViewNode(it, xmlFile, c) }
 	}
 
-	def processViewNode(viewNode, Closure c) {
+	def processViewNode(viewNode, xmlFile, Closure c) {
 		def viewName = viewNode.name()
 		def viewAttributes = viewNode.attributes()
 
@@ -139,32 +120,9 @@ class BindingAttributeValidator {
 		def viewLineNumber = xmlLineNumberDecorator.getLineNumber(viewNode)
 		def (actualBindingAttributes, bindingAttributeLineNumbers) = xmlLineNumberDecorator.getBindingAttributeDetailsMaps(bindingAttributesMap)
 		
-		c.call(viewName, viewLineNumber, actualBindingAttributes, bindingAttributeLineNumbers)
+		def viewBindingAttributes = new ViewBindingAttributes(errorReporter,xmlFile,viewName,viewLineNumber,actualBindingAttributes,bindingAttributeLineNumbers)
+		c.call(viewBindingAttributes)
 
-		viewNode.children().each { processViewNode(it, c) }
-	}
-
-	def getFullyQualifiedViewName(viewName) {
-		viewNameResolver.getViewNameFromLayoutTag(viewName)
-	}
-
-	def validateView(String fullyQualifiedViewName, attributes) {
-		if (!fullyQualifiedViewName.startsWith("android"))
-			return
-
-		def view = instanceOf(fullyQualifiedViewName)
-		getBindingAttributeProcessor().process(view, attributes)
-	}
-
-	def instanceOf(fullyQualifiedViewName) {
-		Class viewClass = Class.forName(fullyQualifiedViewName)
-		Mockito.mock(viewClass)
-	}
-
-	def getBindingAttributeProcessor() {
-		if (bindingAttributeProcessor == null)
-			bindingAttributeProcessor = new BindingAttributeProcessor(null, true)
-
-		bindingAttributeProcessor
+		viewNode.children().each { processViewNode(it, xmlFile, c) }
 	}
 }
