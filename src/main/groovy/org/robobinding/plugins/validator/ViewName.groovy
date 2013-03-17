@@ -15,17 +15,15 @@
  */
 package org.robobinding.plugins.validator
 
-import java.util.Map;
-
 /**
  *
  * @since 1.0
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class ViewNameAndAttributes {
+class ViewName {
 
-	ViewName viewName
-	Map<String, BindingAttribute> bindingAttributes
+	String viewName
+	int lineNumber
 	
 }

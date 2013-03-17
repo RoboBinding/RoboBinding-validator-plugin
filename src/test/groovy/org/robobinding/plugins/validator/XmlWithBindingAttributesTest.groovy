@@ -25,21 +25,35 @@ import spock.lang.Specification
  */
 class XmlWithBindingAttributesTest extends Specification {
 
-	XmlWithBindingAttributesAndLineNumbersValidator xmlWithBindingAttributesAndLineNumbersValidator = new XmlWithBindingAttributesAndLineNumbersValidator()
 	XmlLineNumberDecorator xmlLineNumberDecorator = Mock()
-	XmlWithBindingAttributes xmlWithBindingAttributesValidator = new XmlWithBindingAttributes(
-		xmlLineNumberDecorator: xmlLineNumberDecorator,
-		xmlWithBindingAttributesAndLineNumbersValidator: xmlWithBindingAttributesAndLineNumbersValidator)
+	XmlWithBindingAttributes xmlWithBindingAttributes = new XmlWithBindingAttributes(
+		xmlLineNumberDecorator: xmlLineNumberDecorator)
 	
-	def "given xml with binding attributes, then validate the xml decorated with line numbers"() {
+	def "given xml with binding attributes then the view name and line numbers"() {
 		given:
-		String xml = '<xml>'
-		xmlLineNumberDecorator.embedLineNumbers(xml, "bind") >> '<decorated-xml/>'
+		String xml
+		String xmlWithLineNumbers = '''<?xml version="1.0" encoding="utf-8"?>
+					 <LinearLayout
+			         xmlns:android="http://schemas.android.com/apk/res/android"
+			         xmlns:bind="http://robobinding.org/android"
+			         android:orientation="horizontal">
+					 <TextView line_number="5" android:id="@+id/some_id"
+					 android:layout_width="fill_parent"
+					 android:layout_height="wrap_content"
+					 bind:text_8="{name}"/>
+
+					 <EditText line_number="10"
+					 android:layout_width="fill_parent"
+					 android:layout_height="wrap_content"
+					 bind:text_13="{age}" >
+					 </EditText>
+					 </LinearLayout>'''
+		xmlLineNumberDecorator.embedLineNumbers(xml, 'bind') >> xmlWithLineNumbers
 		
 		when:
-		xmlWithBindingAttributesValidator.validate(xml)
+		def result = xmlWithBindingAttributes.findViewsWithBindings(xml, 'bind')
 		
 		then:
-		1 * xmlWithBindingAttributesAndLineNumbersValidator.validate('<decorated-xml/>')
+		result.size() == 2
 	}
 }

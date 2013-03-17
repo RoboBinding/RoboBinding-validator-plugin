@@ -54,7 +54,7 @@ class XmlLineNumberDecorator {
 		decoratedLines.join("\n")
 	}
 	
-	def getLineNumber(viewNode) {
+	int getLineNumber(Node viewNode) {
 		viewNode.attributes()[LINE_NUMBER_ATTRIBUTE].toInteger()
 	}
 	
