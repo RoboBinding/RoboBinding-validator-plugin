@@ -15,15 +15,6 @@
  */
 package org.robobinding.plugins.validator
 
-import groovy.lang.Closure
-
-import org.mockito.Mockito
-import org.robobinding.binder.BindingAttributeProcessor
-import org.robobinding.binder.BindingAttributeException;
-import org.robobinding.binder.ViewNameResolver
-import org.robobinding.viewattribute.MissingRequiredBindingAttributeException;
-
-import android.view.View
 
 /**
  *
@@ -37,12 +28,12 @@ class BindingAttributesValidator {
 	static final def XML_FILE = ~/.*[.xml]/
 	static final def ROBOBINDING_NAMESPACE = 'http://robobinding.org/android'
 
-	def resFolder
-	def fileChangeChecker
-	def errorReporter
-	def xmlLineNumberDecorator
+	File resFolder
+	FileChangeChecker fileChangeChecker
+	ErrorReporter errorReporter
+	XmlLineNumberDecorator xmlLineNumberDecorator
 	
-	BindingAttributesValidator(baseFolder,fileChangeChecker,errorReporter) {
+	BindingAttributesValidator(File baseFolder, FileChangeChecker fileChangeChecker, ErrorReporter errorReporter) {
 		resFolder = new File(baseFolder, "res")
 		this.fileChangeChecker = fileChangeChecker
 		this.errorReporter = errorReporter
@@ -66,7 +57,7 @@ class BindingAttributesValidator {
 		resFolder.eachDirMatch(LAYOUT_FOLDER) { c.call(it) }
 	}
 
-	def inEachXmlFile(folder, Closure c) {
+	def inEachXmlFile(File folder, Closure c) {
 		folder.eachFileMatch(XML_FILE) { c.call(it) }
 	}
 
@@ -95,7 +86,7 @@ class BindingAttributesValidator {
 		}?.key
 	}
 
-	def forEachViewWithBindingAttributesInThe(xmlFile, Closure c) {
+	def forEachViewWithBindingAttributesInThe(File xmlFile, Closure c) {
 		def xml = xmlFile.text
 		def bindingPrefix = getRoboBindingNamespaceDeclaration(xml)
 		def decoratedXml = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
@@ -105,7 +96,7 @@ class BindingAttributesValidator {
 		rootNode.children().each { processViewNode(it, xmlFile, c) }
 	}
 
-	def processViewNode(viewNode, xmlFile, Closure c) {
+	def processViewNode(viewNode, File xmlFile, Closure c) {
 		def viewName = viewNode.name()
 		def viewAttributes = viewNode.attributes()
 
@@ -120,7 +111,13 @@ class BindingAttributesValidator {
 		def viewLineNumber = xmlLineNumberDecorator.getLineNumber(viewNode)
 		def (actualBindingAttributes, bindingAttributeLineNumbers) = xmlLineNumberDecorator.getBindingAttributeDetailsMaps(bindingAttributesMap)
 		
-		def viewBindingAttributes = new ViewBindingAttributes(errorReporter,xmlFile,viewName,viewLineNumber,actualBindingAttributes,bindingAttributeLineNumbers)
+		def viewBindingAttributes = new ViewBindingAttributes(errorReporter: errorReporter,
+			xmlFile: xmlFile,
+			viewName: viewName,
+			viewLineNumber: viewLineNumber,
+			attributes: actualBindingAttributes,
+			attributeLineNumbers: bindingAttributeLineNumbers)
+		
 		c.call(viewBindingAttributes)
 
 		viewNode.children().each { processViewNode(it, xmlFile, c) }

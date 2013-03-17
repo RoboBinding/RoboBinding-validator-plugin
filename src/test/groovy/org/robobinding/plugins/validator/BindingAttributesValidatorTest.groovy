@@ -16,7 +16,6 @@
 package org.robobinding.plugins.validator
 
 import org.mockito.Mockito
-import org.robobinding.binder.BindingAttributeProcessor
 
 import android.util.AttributeSet
 import android.view.View
@@ -32,11 +31,10 @@ class BindingAttributesValidatorTest extends GroovyTestCase {
 
 	private static final String TEMP_PATH = "."
 	
-	def validator
-	def resFolder
-	def layoutFoldersCount
-	def xmlFilesCount
-	def errorsReported
+	BindingAttributesValidator validator
+	File resFolder
+	int layoutFoldersCount
+	int xmlFilesCount
 	
 	def void test_whenProcessingEachLayoutFolder_thenInvokeTheClosureOnEachFolder() {
 		createLayoutFolders()
@@ -142,7 +140,9 @@ class BindingAttributesValidatorTest extends GroovyTestCase {
 		resFolder = new File("${TEMP_PATH}/res")
 		resFolder.mkdir()
 		
-		validator = new BindingAttributesValidator(new File(TEMP_PATH), [hasFileChangedSinceLastBuild: {Object[] args -> true}], [errorIn: {Object[] args -> println "Error reported"}])
+		validator = new BindingAttributesValidator(new File(TEMP_PATH), 
+			[hasFileChangedSinceLastBuild: {Object[] args -> true}] as FileChangeChecker, 
+			[errorIn: {Object[] args -> println "Error reported"}] as ErrorReporter)
 	}
 	
 	def createLayoutFolders() {

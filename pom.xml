@@ -16,24 +16,24 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.version>2.2.1</maven.version>
+		<maven.version>3.0.5</maven.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.robobinding</groupId>
 			<artifactId>robobinding</artifactId>
-			<version>0.8.1</version>
+			<version>0.8.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
 			<artifactId>groovy-all</artifactId>
-			<version>1.6.5</version>
+			<version>2.0.7</version>
 		</dependency>
 		<dependency>
-			<groupId>org.codehaus.groovy.maven</groupId>
-			<artifactId>gmaven-mojo</artifactId>
-			<version>1.0</version>
+			<groupId>org.codehaus.mojo.groovy</groupId>
+			<artifactId>groovy-mojo-support</artifactId>
+			<version>1.0-beta-3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.android</groupId>
@@ -43,32 +43,12 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>1.8.5</version>
+			<version>1.9.0</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-artifact</artifactId>
-			<version>${maven.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-plugin-api</artifactId>
-			<version>${maven.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-project</artifactId>
-			<version>${maven.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-model</artifactId>
-			<version>${maven.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-core</artifactId>
-			<version>2.0.9</version>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-plugin-plugin</artifactId>
+			<version>3.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.sonatype.plexus</groupId>
@@ -76,63 +56,82 @@
 			<version>0.0.7</version>
 		</dependency>
 		<dependency>
+			<groupId>org.codehaus.plexus</groupId>
+			<artifactId>plexus-utils</artifactId>
+			<version>3.0.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.plugin-tools</groupId>
+			<artifactId>maven-plugin-annotations</artifactId>
+			<version>3.2</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>3.8.2</version>
+			<version>4.8.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.spockframework</groupId>
+			<artifactId>spock-core</artifactId>
+			<version>0.7-groovy-2.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>cglib</groupId>
+			<artifactId>cglib-nodep</artifactId>
+			<version>2.2</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
 	<build>
-		<sourceDirectory>src/main/groovy</sourceDirectory>
-		<testSourceDirectory>src/test/groovy</testSourceDirectory>
 		<plugins>
 			<plugin>
-				<groupId>org.codehaus.gmaven</groupId>
-				<artifactId>gmaven-plugin</artifactId>
-				<version>1.4</version>
-				<configuration>
-					<providerSelection>1.6</providerSelection>
-				</configuration>
-				<extensions>true</extensions>
-				<inherited>true</inherited>
-				<executions>
-					<execution>
-						<goals>
-							<goal>generateStubs</goal>
-							<goal>compile</goal>
-							<goal>generateTestStubs</goal>
-							<goal>testCompile</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
+				<artifactId>maven-plugin-plugin</artifactId>
+				<version>3.2</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<!-- see http://jira.codehaus.org/browse/MNG-5346 -->
+					<skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.plexus</groupId>
-				<artifactId>plexus-maven-plugin</artifactId>
-				<version>1.3.8</version>
 				<executions>
 					<execution>
+						<id>mojo-descriptor</id>
 						<goals>
 							<goal>descriptor</goal>
 						</goals>
+						<phase>test-compile</phase>
+					</execution>
+					<execution>
+						<id>help-goal</id>
+						<goals>
+							<goal>helpmojo</goal>
+						</goals>
+						<phase>test-compile</phase>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<compilerId>groovy-eclipse-compiler</compilerId>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.groovy</groupId>
+						<artifactId>groovy-eclipse-compiler</artifactId>
+						<version>2.7.0-01</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings 
-					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
@@ -143,38 +142,17 @@
 								<pluginExecution>
 									<pluginExecutionFilter>
 										<groupId>
-											org.codehaus.gmaven
+											org.apache.maven.plugins
 										</groupId>
 										<artifactId>
-											gmaven-plugin
+											maven-compiler-plugin
 										</artifactId>
 										<versionRange>
-											[1.2,)
+											[2.3.2,)
 										</versionRange>
 										<goals>
 											<goal>compile</goal>
 											<goal>testCompile</goal>
-											<goal>generateTestStubs</goal>
-											<goal>generateStubs</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<execute></execute>
-									</action>
-								</pluginExecution>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.codehaus.plexus
-										</groupId>
-										<artifactId>
-											plexus-maven-plugin
-										</artifactId>
-										<versionRange>
-											[1.3.8,)
-										</versionRange>
-										<goals>
-											<goal>descriptor</goal>
 										</goals>
 									</pluginExecutionFilter>
 									<action>

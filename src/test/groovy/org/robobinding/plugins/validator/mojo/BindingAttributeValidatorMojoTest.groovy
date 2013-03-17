@@ -15,8 +15,6 @@
 */
 package org.robobinding.plugins.validator.mojo
 
-import org.robobinding.binder.BindingAttributeProcessor
-
 import android.util.AttributeSet
 import android.view.View
 

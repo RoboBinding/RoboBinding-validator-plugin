@@ -16,8 +16,14 @@
 package org.robobinding.plugins.validator.mojo
 
 import org.apache.maven.plugin.MojoFailureException
-import org.codehaus.groovy.maven.mojo.GroovyMojo
+import org.apache.maven.plugins.annotations.Component
+import org.apache.maven.plugins.annotations.LifecyclePhase
+import org.apache.maven.plugins.annotations.Mojo
+import org.apache.maven.plugins.annotations.Parameter
+import org.codehaus.mojo.groovy.GroovyMojo
 import org.robobinding.plugins.validator.BindingAttributesValidator
+import org.robobinding.plugins.validator.ErrorReporter
+import org.robobinding.plugins.validator.FileChangeChecker
 import org.sonatype.plexus.build.incremental.BuildContext
 
 /**
@@ -30,25 +36,27 @@ import org.sonatype.plexus.build.incremental.BuildContext
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
+@Mojo(name="validate-bindings", 
+	defaultPhase=LifecyclePhase.COMPILE, 
+	configurator="include-project-dependencies")
 class BindingAttributeValidatorMojo extends GroovyMojo
 {
 	/**
 	 * @parameter expression="${basedir}"
 	 * @required
 	 */
-	def baseFolder
+	@Parameter(property='basedir',required=true)
+	public File baseFolder
 	
-	/** 
-	 * @component 
-	 */
-	private BuildContext buildContext;
+	@Component
+	public BuildContext buildContext;
 	
 	void execute()
 	{
 		log.info("Validating binding attributes...")
 		
-		def fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
-		def errorReporter = new MojoErrorReporter(buildContext: buildContext)
+		FileChangeChecker fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
+		ErrorReporter errorReporter = new MojoErrorReporter(buildContext: buildContext)
 		new BindingAttributesValidator(baseFolder, fileChangeChecker, errorReporter).validate()
 		
 		if (errorReporter.errorMessages)

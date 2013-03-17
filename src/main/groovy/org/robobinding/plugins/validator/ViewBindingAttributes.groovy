@@ -15,11 +15,14 @@
  */
 package org.robobinding.plugins.validator
 
+import static org.mockito.Mockito.*
 import org.mockito.Mockito
-import org.robobinding.binder.BindingAttributeException
-import org.robobinding.binder.BindingAttributeProcessor
+import org.robobinding.PendingAttributesForView
+import org.robobinding.PendingAttributesForViewImpl
+import org.robobinding.ViewResolutionErrorsException
+import org.robobinding.binder.BindingAttributeResolver
 import org.robobinding.binder.ViewNameResolver
-import org.robobinding.viewattribute.MissingRequiredBindingAttributeException
+import org.robobinding.binder.ViewResolutionResult
 
 /**
  *
@@ -29,24 +32,14 @@ import org.robobinding.viewattribute.MissingRequiredBindingAttributeException
  */
 class ViewBindingAttributes {
 
-	def viewNameResolver
-	def errorReporter
-	def xmlFile
-	def viewName
-	def viewLineNumber
-	def attributes
-	def attributeLineNumbers
-	def bindingAttributeProcessor
-	
-	def ViewBindingAttributes(errorReporter,xmlFile,viewName,viewLineNumber,attributes,attributeLineNumbers) {
-		this.errorReporter = errorReporter
-		this.xmlFile = xmlFile
-		this.viewName = viewName
-		this.viewLineNumber = viewLineNumber
-		this.attributes = attributes
-		this.attributeLineNumbers = attributeLineNumbers
-		this.viewNameResolver = new ViewNameResolver()
-	}
+	ViewNameResolver viewNameResolver = new ViewNameResolver()
+	BindingAttributeResolver bindingAttributeResolver = new BindingAttributeResolver();
+	ErrorReporter errorReporter
+	File xmlFile
+	String viewName
+	int viewLineNumber
+	Map<String, String> attributes
+	Map<String, Integer> attributeLineNumbers
 	
 	def validate() {
 		errorReporter.clearErrorsFor(xmlFile)
@@ -58,16 +51,13 @@ class ViewBindingAttributes {
 		try {
 			viewValidator.call()
 		}
-		catch (BindingAttributeException e) {
-			e.unrecognizedBindingAttributes.each { attributeName, attributeValue ->
-				reportUnrecognizedBindingAttribute(attributeName)
+		catch (ViewResolutionErrorsException e) {
+			e.attributeErrors.each { attributeResolutionException ->
+				reportUnrecognizedBindingAttribute(attributeResolutionException.attributeName)
 			}
-			e.malformedBindingAttributes.each { attributeName, errorMessage ->
-				reportMalformedBindingAttribute(attributeName, errorMessage)
+			e.missingRequiredAttributeErrors.each { missingRequiredAttributesException ->
+				reportMissingRequiredAttributes(missingRequiredAttributesException.missingAttributes)
 			}
-		}
-		catch (MissingRequiredBindingAttributeException e) {
-			reportMissingRequiredAttributes(e.missingAttributes)
 		}
 	}
 	
@@ -76,7 +66,9 @@ class ViewBindingAttributes {
 			return
 
 		def view = instanceOf(fullyQualifiedViewName)
-		getBindingAttributeProcessor().process(view, attributes)
+		PendingAttributesForView pendingAttributes = new PendingAttributesForViewImpl(view, attributes)
+		ViewResolutionResult result = bindingAttributeResolver.resolve(pendingAttributes)
+		result.assertNoErrors()
 	}
 
 	def instanceOf(fullyQualifiedViewName) {
@@ -100,10 +92,10 @@ class ViewBindingAttributes {
 		viewNameResolver.getViewNameFromLayoutTag(viewName)
 	}
 	
-	def getBindingAttributeProcessor() {
-		if (bindingAttributeProcessor == null)
-			bindingAttributeProcessor = new BindingAttributeProcessor(null, true)
-
-		bindingAttributeProcessor
-	}
+//	def getBindingAttributeProcessor() {
+//		if (bindingAttributeProcessor == null)
+//			bindingAttributeProcessor = new BindingAttributeProcessor(null, true)
+//
+//		bindingAttributeProcessor
+//	}
 }

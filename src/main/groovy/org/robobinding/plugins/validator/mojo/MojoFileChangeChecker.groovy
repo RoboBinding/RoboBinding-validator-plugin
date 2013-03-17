@@ -15,7 +15,10 @@
  */
 package org.robobinding.plugins.validator.mojo
 
+import org.robobinding.plugins.validator.FileChangeChecker
+import org.sonatype.plexus.build.incremental.BuildContext;
 
+import java.io.File;
 
 /**
  *
@@ -23,11 +26,11 @@ package org.robobinding.plugins.validator.mojo
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class MojoFileChangeChecker
+class MojoFileChangeChecker implements FileChangeChecker
 {
-	def buildContext
+	BuildContext buildContext
 	
-	def hasFileChangedSinceLastBuild(file) {
+	boolean hasFileChangedSinceLastBuild(File file) {
 		buildContext.hasDelta(file)
 	}
 }

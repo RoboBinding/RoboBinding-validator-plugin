@@ -25,7 +25,7 @@ class XmlLineNumberDecorator {
 
 	static final String LINE_NUMBER_ATTRIBUTE = "line_number"
 	
-	def embedLineNumbers(xml,bindingPrefix) {
+	String embedLineNumbers(String xml, String bindingPrefix) {
 		def decoratedLines = []
 		
 		xml.eachLine { line, lineNumber ->
@@ -64,7 +64,6 @@ class XmlLineNumberDecorator {
 	}
 	
 	def getBindingAttributeDetailsMaps(bindingAttributesMap) {
-		
 		def actualBindingAttributes = [:]
 		def bindingAttributeLineNumbers = [:]
 		

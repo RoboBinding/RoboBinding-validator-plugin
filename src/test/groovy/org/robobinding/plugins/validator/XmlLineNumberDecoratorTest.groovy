@@ -15,9 +15,9 @@
  */
 package org.robobinding.plugins.validator
 
-import groovy.util.slurpersupport.NodeChild;
-
 import org.mockito.Mockito
+
+import spock.lang.Specification
 
 /**
  *
@@ -25,14 +25,13 @@ import org.mockito.Mockito
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class XmlLineNumberDecoratorTest extends GroovyTestCase {
+class XmlLineNumberDecoratorTest extends Specification {
 
-	static final String BINDING_PREFIX = "bind"
+	static final String BINDING_PREFIX = 'bind'
+	XmlLineNumberDecorator xmlDecorator = new XmlLineNumberDecorator()
 	
-	def xmlDecorator = new XmlLineNumberDecorator()
-	
-	def void test_whenDecoratingViewTags_thenAppendLineNumber() {
-
+	def "should append line number to view tags"() {
+		given:
 		def xml = '''<?xml version="1.0" encoding="utf-8"?>
 					 <TextView android:id="@+id/some_id"
 					 android:layout_width="fill_parent"
@@ -43,7 +42,11 @@ class XmlLineNumberDecoratorTest extends GroovyTestCase {
 					 android:layout_height="wrap_content" >
 					 </EditText>'''
 
-		def expectedXml = '''<?xml version="1.0" encoding="utf-8"?>
+		when:
+		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
+
+		then:
+		decoratedXml == '''<?xml version="1.0" encoding="utf-8"?>
 					 <TextView line_number="2" android:id="@+id/some_id"
 					 android:layout_width="fill_parent"
 					 android:layout_height="wrap_content" />
@@ -52,14 +55,10 @@ class XmlLineNumberDecoratorTest extends GroovyTestCase {
 					 android:layout_width="fill_parent"
 					 android:layout_height="wrap_content" >
 					 </EditText>'''
-
-		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
-
-		assertEquals(expectedXml, decoratedXml)
 	}
 	
-	def void test_whenDecoratingFullyQualifiedViewTags_thenAppendLineNumber() {
-		
+	def "should append line number to fully qualified view tags"() {
+		given:
 		def xml = '''<?xml version="1.0" encoding="utf-8"?>
 					 <android.widget.TextView android:id="@+id/some_id"
 					 android:layout_width="fill_parent"
@@ -70,7 +69,11 @@ class XmlLineNumberDecoratorTest extends GroovyTestCase {
 					 android:layout_height="wrap_content" >
 					 </android.widget.EditText>'''
 
-		def expectedXml = '''<?xml version="1.0" encoding="utf-8"?>
+		when:
+		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
+
+		then:
+		decoratedXml == '''<?xml version="1.0" encoding="utf-8"?>
 					 <android.widget.TextView line_number="2" android:id="@+id/some_id"
 					 android:layout_width="fill_parent"
 					 android:layout_height="wrap_content" />
@@ -79,31 +82,27 @@ class XmlLineNumberDecoratorTest extends GroovyTestCase {
 					 android:layout_width="fill_parent"
 					 android:layout_height="wrap_content" >
 					 </android.widget.EditText>'''
-
-		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
-
-		assertEquals(expectedXml, decoratedXml)
 	}
 	
-	def void test_whenDecoratingMultipleViewTagsOnSameLine_thenAppendLineNumberToEach() {
-		
+	def "should append line numbers to every view tag on the same line"() {
+		given:
 		def xml = '<?xml version="1.0" encoding="utf-8"?><TextView android:id="@+id/some_id"' + 
 						' android:layout_width="fill_parent" android:layout_height="wrap_content" />' + 
 						'<EditText android:id="@+id/some_other_id" android:layout_width="fill_parent" ' +
 						'android:layout_height="wrap_content" />'
 						
-		def expectedXml = '<?xml version="1.0" encoding="utf-8"?><TextView line_number="1" android:id="@+id/some_id"' + 
+		when:
+		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
+
+		then:
+		decoratedXml == '<?xml version="1.0" encoding="utf-8"?><TextView line_number="1" android:id="@+id/some_id"' + 
 						' android:layout_width="fill_parent" android:layout_height="wrap_content" />' + 
 						'<EditText line_number="1" android:id="@+id/some_other_id" android:layout_width="fill_parent" ' +
 						'android:layout_height="wrap_content" />'
-
-		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
-
-		assertEquals(expectedXml, decoratedXml)
 	}
 
-	def void test_whenDecoratingBindingAttributes_thenAppendLineNumber() {
-
+	def "should append line numbers to binding attributes "() {
+		given:
 		def xml = '''android:layout_width="fill_parent"
 					 android:layout_height="wrap_content"
 					 bind:text="${value}"/>
@@ -112,60 +111,67 @@ class XmlLineNumberDecoratorTest extends GroovyTestCase {
 					 android:layout_height="wrap_content"
 					 bind:onTextChange="textChanged" />'''
 
-		def expectedXml = '''android:layout_width="fill_parent"
+		when:
+		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
+
+		then:
+		decoratedXml == '''android:layout_width="fill_parent"
 					 android:layout_height="wrap_content"
 					 bind:text_3="${value}"/>
 
 					 android:layout_width="fill_parent"
 					 android:layout_height="wrap_content"
 					 bind:onTextChange_7="textChanged" />'''
-
-		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
-
-		assertEquals(expectedXml, decoratedXml)
 	}
 	
-	def void test_whenDecoratingMultipleBindingAttributesOnSameLine_thenAppendLineNumberToEach() {
-		
+	def "should append line numbers to every binding attribute on the same line"() {
+		given:
 		def xml = 'android:layout_width="fill_parent" android:layout_height="wrap_content" />' +
 					'bind:text="${value}" android:layout_width="fill_parent" ' +
 					'android:layout_height="wrap_content" bind:onTextChange="textChanged" />'
 						
-		def expectedXml = 'android:layout_width="fill_parent" android:layout_height="wrap_content" />' +
-					'bind:text_1="${value}" android:layout_width="fill_parent" ' +
-					'android:layout_height="wrap_content" bind:onTextChange_1="textChanged" />'
-
+		when:
 		def decoratedXml = xmlDecorator.embedLineNumbers(xml, BINDING_PREFIX)
 
-		assertEquals(expectedXml, decoratedXml)
+		then:
+		decoratedXml == 'android:layout_width="fill_parent" android:layout_height="wrap_content" />' +
+					'bind:text_1="${value}" android:layout_width="fill_parent" ' +
+					'android:layout_height="wrap_content" bind:onTextChange_1="textChanged" />'
 	}
 	
-	def void test_givenDecoratedViewTag_thenReturnViewNameAndLineNumber() {
-		Node node = Mockito.mock(Node.class)
-		Mockito.when(node.attributes()).thenReturn([line_number:"2"])
+	def "should get line number for decorated view tag"() {
+		given:
+		Node node = Mock()
+		node.attributes() >> [line_number:"2"]
 		
+		when:
 		def lineNumber = xmlDecorator.getLineNumber(node)
 		
-		assertEquals(2, lineNumber)
+		then:
+		lineNumber == 2
 	}
 	
-	def void test_givenDecoratedBindingAttribute_thenReturnAttributeNameAndLineNumber() {
+	def "should get line number and attribute name for decorated binding attribute"() {
+		given:
+		def attributeValue = 'text_12'
 		
-		def attributeValue = "text_12"
-		
+		when:
 		def (attributeName, lineNumber) = xmlDecorator.getBindingAttributeDetails(attributeValue)
 		
-		assertEquals("text", attributeName)
-		assertEquals(12, lineNumber)
+		then:
+		attributeName == 'text'
+		lineNumber == 12
 	}
 	
-	def void test_givenDecoratedBindingAttributeMap_thenReturnBindingAttributesMapAndLineNumbersMaps() {
-		
+	def "should get line numbers and attribute names from a map of decorated binding attributes"() {
+		given:
 		def bindingAttributesMap = [text_12:"{text}", enabled_13:"{value}"]
 		
+		when:
 		def (actualBindingAttributes, bindingAttributeLineNumbers) = xmlDecorator.getBindingAttributeDetailsMaps(bindingAttributesMap)
 		
-		assertEquals([text:"{text}", enabled:"{value}"], actualBindingAttributes)
-		assertEquals([text:12, enabled:13], bindingAttributeLineNumbers)
+		then:
+		actualBindingAttributes == [text:"{text}", enabled:"{value}"]
+		bindingAttributeLineNumbers == [text:12, enabled:13]
 	}
 }

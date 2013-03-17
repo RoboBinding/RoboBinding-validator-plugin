@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Cheng Wei, Robert Taylor
+ * Copyright 2013 Cheng Wei, Robert Taylor
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ import java.io.File;
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-interface ErrorReporter {
+interface FileChangeChecker {
 	
-	void errorIn(File file, int lineNumber, String errorMessage)
-	
-	void clearErrorsFor(File file)
+	boolean hasFileChangedSinceLastBuild(File file)
 }
