@@ -29,31 +29,49 @@ class XmlWithBindingAttributesTest extends Specification {
 	XmlWithBindingAttributes xmlWithBindingAttributes = new XmlWithBindingAttributes(
 		xmlLineNumberDecorator: xmlLineNumberDecorator)
 	
-	def "given xml with binding attributes then the view name and line numbers"() {
+	def "given xml with binding attributes then determine view name and line numbers"() {
 		given:
-		String xml
-		String xmlWithLineNumbers = '''<?xml version="1.0" encoding="utf-8"?>
+		String rawXml = "<raw-xml/>"
+		String xmlWithLineNumbers = 
+				  '''<?xml version="1.0" encoding="utf-8"?>
 					 <LinearLayout
-			         xmlns:android="http://schemas.android.com/apk/res/android"
-			         xmlns:bind="http://robobinding.org/android"
-			         android:orientation="horizontal">
-					 <TextView line_number="5" android:id="@+id/some_id"
-					 android:layout_width="fill_parent"
-					 android:layout_height="wrap_content"
-					 bind:text_8="{name}"/>
+			            xmlns:android="http://schemas.android.com/apk/res/android"
+			            xmlns:bind="http://robobinding.org/android"
+			            android:orientation="horizontal">
+					    
+					    <TextView line_number="6" android:id="@+id/some_id"
+					       android:layout_width="fill_parent"
+					       android:layout_height="wrap_content"
+					       bind:text_9="{name}"/>
 
-					 <EditText line_number="10"
-					 android:layout_width="fill_parent"
-					 android:layout_height="wrap_content"
-					 bind:text_13="{age}" >
-					 </EditText>
+						<RelativeLayout line_number="11"
+						   android:layout_width="fill_parent"
+					       android:layout_height="wrap_content">
+					       
+						   <EditText line_number="15"
+					          android:layout_width="fill_parent"
+					          android:layout_height="wrap_content"
+					          bind:visibility_18="{nameVisible}" >
+					       </EditText>
+
+						 </RelativeLayout>
 					 </LinearLayout>'''
-		xmlLineNumberDecorator.embedLineNumbers(xml, 'bind') >> xmlWithLineNumbers
+		xmlLineNumberDecorator.embedLineNumbers(rawXml, 'bind') >> xmlWithLineNumbers
 		
 		when:
-		def result = xmlWithBindingAttributes.findViewsWithBindings(xml, 'bind')
+		List<ViewNameAndAttributes> results = xmlWithBindingAttributes.findViewsWithBindings(rawXml, 'bind')
 		
 		then:
-		result.size() == 2
+		results.size() == 2
+		results[0].viewName.value == 'TextView'
+		results[0].viewName.lineNumber == 6
+		results[0].bindingAttributes[0].attributeName == 'text'
+		results[0].bindingAttributes[0].attributeValue == '{name}'
+		results[0].bindingAttributes[0].lineNumber == 9
+		results[1].viewName.value == 'EditText'
+		results[1].viewName.lineNumber == 15
+		results[1].bindingAttributes[0].attributeName == 'visibility'
+		results[1].bindingAttributes[0].attributeValue == '{nameVisible}'
+		results[1].bindingAttributes[0].lineNumber == 18
 	}
 }

@@ -26,6 +26,6 @@ import java.util.Map;
 class ViewNameAndAttributes {
 
 	ViewName viewName
-	Map<String, BindingAttribute> bindingAttributes
+	List<BindingAttribute> bindingAttributes
 	
 }

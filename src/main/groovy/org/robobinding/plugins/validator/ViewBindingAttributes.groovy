@@ -35,7 +35,7 @@ class ViewBindingAttributes {
 	ViewNameResolver viewNameResolver = new ViewNameResolver()
 	BindingAttributeResolver bindingAttributeResolver = new BindingAttributeResolver();
 	ErrorReporter errorReporter
-	File xmlFile
+	def xmlFile
 	String viewName
 	int viewLineNumber
 	Map<String, String> attributes

@@ -23,7 +23,7 @@ package org.robobinding.plugins.validator
  */
 class ViewName {
 
-	String viewName
+	String value
 	int lineNumber
 	
 }

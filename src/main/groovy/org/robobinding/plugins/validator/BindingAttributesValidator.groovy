@@ -86,17 +86,17 @@ class BindingAttributesValidator {
 		}?.key
 	}
 
-	def forEachViewWithBindingAttributesInThe(File xmlFile, Closure c) {
+	def forEachViewWithBindingAttributesInThe(xmlFile, Closure c) {
 		def xml = xmlFile.text
 		def bindingPrefix = getRoboBindingNamespaceDeclaration(xml)
 		def decoratedXml = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
 		
 		def rootNode = new XmlSlurper().parseText(decoratedXml)
-
-		rootNode.children().each { processViewNode(it, xmlFile, c) }
+		def nodeChildren = rootNode.children()
+		nodeChildren.each { processViewNode(it, xmlFile, c) }
 	}
 
-	def processViewNode(viewNode, File xmlFile, Closure c) {
+	def processViewNode(viewNode, xmlFile, Closure c) {
 		def viewName = viewNode.name()
 		def viewAttributes = viewNode.attributes()
 

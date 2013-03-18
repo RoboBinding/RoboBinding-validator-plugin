@@ -129,6 +129,12 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.groovy</groupId>
+				<artifactId>groovy-eclipse-compiler</artifactId>
+				<version>2.7.0-01</version>
+				<extensions>true</extensions>
+			</plugin>
 		</plugins>
 		<pluginManagement>
 			<plugins>
@@ -153,6 +159,27 @@
 										<goals>
 											<goal>compile</goal>
 											<goal>testCompile</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore></ignore>
+									</action>
+								</pluginExecution>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.codehaus.groovy
+										</groupId>
+										<artifactId>
+											groovy-eclipse-compiler
+										</artifactId>
+										<versionRange>
+											[2.7.0-01,)
+										</versionRange>
+										<goals>
+											<goal>
+												add-groovy-build-paths
+											</goal>
 										</goals>
 									</pluginExecutionFilter>
 									<action>

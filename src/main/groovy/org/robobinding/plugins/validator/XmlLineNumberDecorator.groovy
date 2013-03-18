@@ -53,26 +53,4 @@ class XmlLineNumberDecorator {
 		
 		decoratedLines.join("\n")
 	}
-	
-	int getLineNumber(Node viewNode) {
-		viewNode.attributes()[LINE_NUMBER_ATTRIBUTE].toInteger()
-	}
-	
-	def getBindingAttributeDetails(attributeValue) {
-		def attributeDetails = attributeValue.split('_')
-		[attributeDetails[0], attributeDetails[1].toInteger()]
-	}
-	
-	def getBindingAttributeDetailsMaps(bindingAttributesMap) {
-		def actualBindingAttributes = [:]
-		def bindingAttributeLineNumbers = [:]
-		
-		bindingAttributesMap.each { key, value ->
-			def (attributeName, lineNumber) = getBindingAttributeDetails(key)
-			actualBindingAttributes[attributeName] = value
-			bindingAttributeLineNumbers[attributeName] = lineNumber
-		}
-		
-		[actualBindingAttributes, bindingAttributeLineNumbers]
-	}
 }

@@ -138,40 +138,4 @@ class XmlLineNumberDecoratorTest extends Specification {
 					'bind:text_1="${value}" android:layout_width="fill_parent" ' +
 					'android:layout_height="wrap_content" bind:onTextChange_1="textChanged" />'
 	}
-	
-	def "should get line number for decorated view tag"() {
-		given:
-		Node node = Mock()
-		node.attributes() >> [line_number:"2"]
-		
-		when:
-		def lineNumber = xmlDecorator.getLineNumber(node)
-		
-		then:
-		lineNumber == 2
-	}
-	
-	def "should get line number and attribute name for decorated binding attribute"() {
-		given:
-		def attributeValue = 'text_12'
-		
-		when:
-		def (attributeName, lineNumber) = xmlDecorator.getBindingAttributeDetails(attributeValue)
-		
-		then:
-		attributeName == 'text'
-		lineNumber == 12
-	}
-	
-	def "should get line numbers and attribute names from a map of decorated binding attributes"() {
-		given:
-		def bindingAttributesMap = [text_12:"{text}", enabled_13:"{value}"]
-		
-		when:
-		def (actualBindingAttributes, bindingAttributeLineNumbers) = xmlDecorator.getBindingAttributeDetailsMaps(bindingAttributesMap)
-		
-		then:
-		actualBindingAttributes == [text:"{text}", enabled:"{value}"]
-		bindingAttributeLineNumbers == [text:12, enabled:13]
-	}
 }

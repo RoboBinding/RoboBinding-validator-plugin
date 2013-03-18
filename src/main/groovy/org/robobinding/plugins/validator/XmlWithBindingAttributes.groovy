@@ -17,8 +17,11 @@ package org.robobinding.plugins.validator
 
 import groovy.lang.Closure;
 import groovy.util.Node;
+import groovy.util.slurpersupport.GPathResult
 
 import java.io.File;
+
+import javax.xml.namespace.QName;
 
 /**
  *
@@ -28,54 +31,64 @@ import java.io.File;
  */
 class XmlWithBindingAttributes {
 
-	//TODO remove this duplication
-	static final def ROBOBINDING_NAMESPACE = 'http://robobinding.org/android'
-	static final String LINE_NUMBER_ATTRIBUTE = "line_number"
 	XmlLineNumberDecorator xmlLineNumberDecorator
 	
 	List<ViewNameAndAttributes> findViewsWithBindings(String xml, String bindingPrefix) {
-		String xmlWithLineNumbers = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
 		List<ViewNameAndAttributes> viewNamesAndAttributes = []
+		String xmlWithLineNumbers = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
 		
-		def rootNode = new XmlSlurper().parseText(xmlWithLineNumbers)
-		rootNode.children().each { 
+		GPathResult rootNode = new XmlSlurper().parseText(xmlWithLineNumbers)
+		
+		rootNode.children().eachWithIndex { it, index ->
 			processViewNode(it, viewNamesAndAttributes) 
 		}
+		
+		viewNamesAndAttributes
 	}
 	
 	def processViewNode(viewNode, viewNamesAndAttributes) {
-		ViewName viewName = new ViewName(viewName: viewNode.name(), lineNumber: getLineNumber(viewNode))
-		def viewAttributes = viewNode.attributes()
+		ViewName viewName = new ViewName(value: viewNode.name(), lineNumber: getLineNumber(viewNode))
+		def rawBindingAttributesMap = getBindingAttributesForNode(viewNode)
+		addBindingAttributesToList(rawBindingAttributesMap, viewName, viewNamesAndAttributes)
+		
+		viewNode.children().each { 
+			processViewNode(it, viewNamesAndAttributes) 
+		}
+	}
 
+	private getBindingAttributesForNode(viewNode) {
+		def viewAttributes = viewNode.attributes()
 		def nodeField = viewNode.getClass().getDeclaredField("node")
 		nodeField.setAccessible(true)
 		def node = nodeField.get(viewNode)
 
-		def attributesWithRoboBindingNamespace = node.@attributeNamespaces.findAll { it.value == ROBOBINDING_NAMESPACE }
+		def attributesWithRoboBindingNamespace = node.@attributeNamespaces.findAll { it.value == FilesWithBindingAttributes.ROBOBINDING_NAMESPACE }
 		def bindingAttributeNames = attributesWithRoboBindingNamespace*.key
-		def rawBindingAttributesMap = viewAttributes.subMap(bindingAttributeNames)
-		
-		Map<String, BindingAttribute> bindingAttributes = getBindingAttributes(rawBindingAttributesMap)
-		
-		def viewBindingAttributes = new ViewNameAndAttributes(
-			viewName: viewName,
-			bindingAttributes: bindingAttributes)
-		
-		viewNamesAndAttributes << viewBindingAttributes
-
-		viewNode.children().each { processViewNode(it, viewNamesAndAttributes) }
+		viewAttributes.subMap(bindingAttributeNames)
 	}
 	
-	//TODO remove these from XmlLineNumberDecorator
 	private int getLineNumber(viewNode) {
-		viewNode.attributes()[LINE_NUMBER_ATTRIBUTE].toInteger()
+		viewNode.attributes()[XmlLineNumberDecorator.LINE_NUMBER_ATTRIBUTE].toInteger()
 	}
 	
-	Map<String, BindingAttribute> getBindingAttributes(rawBindingAttributesMap) {
-		def bindingAttributes = [:]
+	private addBindingAttributesToList(rawBindingAttributesMap, ViewName viewName, viewNamesAndAttributes) {
+		List<BindingAttribute> bindingAttributes = getBindingAttributes(rawBindingAttributesMap)
+		if (bindingAttributes) {
+			
+			def viewBindingAttributes = new ViewNameAndAttributes(
+					viewName: viewName,
+					bindingAttributes: bindingAttributes)
+			
+			viewNamesAndAttributes << viewBindingAttributes
+		}
+	}
+	
+	private List<BindingAttribute> getBindingAttributes(rawBindingAttributesMap) {
+		def bindingAttributes = []
 		
-		rawBindingAttributesMap.each { attributeName, attributeValue ->
-			bindingAttributes[attributeName] = createBindingAttribute(attributeName, attributeValue)
+		rawBindingAttributesMap.each { attributeQName, attributeValue ->
+			String attributeName = QName.valueOf(attributeQName).localPart
+			bindingAttributes << createBindingAttribute(attributeName, attributeValue)
 		}
 		
 		bindingAttributes

@@ -84,18 +84,34 @@ class BindingAttributesValidatorTest extends GroovyTestCase {
 	}
 	
 	def void test_givenXmlWithBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
+//		def xml = '''<?xml version="1.0" encoding="utf-8"?>
+//			<LinearLayout
+//				xmlns:android="http://schemas.android.com/apk/res/android"
+//				xmlns:bind="http://robobinding.org/android"
+//				android:orientation="horizontal">
+//				<EditText
+//					android:layout_width="fill_parent"
+//					android:layout_height="wrap_content"
+//					bind:enabled="{firstnameInputEnabled}"
+//					bind:text="${firstname}" />
+//			</LinearLayout>'''
 		def xml = '''<?xml version="1.0" encoding="utf-8"?>
-			<LinearLayout
-				xmlns:android="http://schemas.android.com/apk/res/android"
-				xmlns:bind="http://robobinding.org/android"
-				android:orientation="horizontal">
-				<EditText
-					android:layout_width="fill_parent"
-					android:layout_height="wrap_content"
-					bind:enabled="{firstnameInputEnabled}"
-					bind:text="${firstname}" />
-			</LinearLayout>'''
-		
+					 <LinearLayout
+			         xmlns:android="http://schemas.android.com/apk/res/android"
+			         xmlns:bind="http://robobinding.org/android"
+			         android:orientation="horizontal">
+					 <TextView android:id="@+id/some_id"
+					 android:layout_width="fill_parent"
+					 android:layout_height="wrap_content"
+					 bind:text_8="{name}"/>
+
+					 <EditText
+					 android:layout_width="fill_parent"
+					 android:layout_height="wrap_content"
+					 bind:text_13="{age}" >
+					 </EditText>
+					 </LinearLayout>'''
+			
 		def viewFound, attributesFound
 		validator.forEachViewWithBindingAttributesInThe([text: xml]) {viewAttributeDetails ->
 			viewFound = viewAttributeDetails.viewName
