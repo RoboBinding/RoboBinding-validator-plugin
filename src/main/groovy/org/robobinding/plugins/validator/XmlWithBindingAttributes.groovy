@@ -16,6 +16,7 @@
 package org.robobinding.plugins.validator
 
 import groovy.lang.Closure;
+import groovy.transform.Immutable;
 import groovy.util.Node;
 import groovy.util.slurpersupport.GPathResult
 

@@ -15,7 +15,10 @@
  */
 package org.robobinding.plugins.validator
 
+import groovy.lang.Closure;
 import groovy.transform.Immutable;
+
+import java.io.File;
 
 /**
  *
@@ -23,17 +26,31 @@ import groovy.transform.Immutable;
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class FilesWithChanges {
+class LayoutXmlValidator {
 
-	static final NO_UPDATED_VIEWS_WITH_BINDINGS_FOUND = []
-	FileChangeChecker fileChangeChecker	
-	FilesWithBindingAttributes filesWithBindingAttributes
+	static final def LAYOUT_FOLDER = ~/[layout].*/
+	static final def XML_FILE = ~/.*[.xml]/
+	File resFolder
+	FilesWithChanges filesWithChanges
+	BindingAttributeValidator bindingAttributeValidator
 	
-	List<ViewNameAndAttributes> findUpdatedViewsWithBindings(File xmlFile) {
-		if (fileChangeChecker.hasFileChangedSinceLastBuild(xmlFile)) {
-			return filesWithBindingAttributes.findViewsWithBindings(xmlFile.text)
+	void validate() {
+		def fileToViewBindingsMap = [:]
+		
+		inEachLayoutFolder { layoutFolder ->
+			inEachXmlFile(layoutFolder) { xmlFile ->
+				fileToViewBindingsMap[xmlFile] = filesWithChanges.findUpdatedViewsWithBindings(xmlFile)
+			}
 		}
 		
-		return NO_UPDATED_VIEWS_WITH_BINDINGS_FOUND
+		bindingAttributeValidator.validate(fileToViewBindingsMap)
+	}
+	
+	def inEachLayoutFolder (Closure c) {
+		resFolder.eachDirMatch(LAYOUT_FOLDER) { c.call(it) }
+	}
+
+	def inEachXmlFile(File folder, Closure c) {
+		folder.eachFileMatch(XML_FILE) { c.call(it) }
 	}
 }

@@ -15,25 +15,20 @@
  */
 package org.robobinding.plugins.validator
 
-import groovy.transform.Immutable;
-
 /**
  *
  * @since 1.0
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class FilesWithChanges {
+class BindingAttributeValidator {
 
-	static final NO_UPDATED_VIEWS_WITH_BINDINGS_FOUND = []
-	FileChangeChecker fileChangeChecker	
-	FilesWithBindingAttributes filesWithBindingAttributes
+	ErrorReporter errorReporter
 	
-	List<ViewNameAndAttributes> findUpdatedViewsWithBindings(File xmlFile) {
-		if (fileChangeChecker.hasFileChangedSinceLastBuild(xmlFile)) {
-			return filesWithBindingAttributes.findViewsWithBindings(xmlFile.text)
+	void validate(Map<File, ViewNameAndAttributes> viewBindingsForFile) {
+		viewBindingsForFile.each { xmlFile, viewNameAndAttributes ->
+			errorReporter.clearErrorsFor(xmlFile)
 		}
-		
-		return NO_UPDATED_VIEWS_WITH_BINDINGS_FOUND
 	}
+	
 }

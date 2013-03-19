@@ -15,6 +15,8 @@
  */
 package org.robobinding.plugins.validator
 
+import groovy.transform.Immutable;
+
 /**
  *
  * @since 1.0
