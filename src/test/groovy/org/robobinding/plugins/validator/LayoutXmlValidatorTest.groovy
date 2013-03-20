@@ -30,7 +30,7 @@ class LayoutXmlValidatorTest extends Specification {
 	BindingAttributeValidator bindingAttributeValidator = Mock()
 	File resFolder = new File("test-tmp/res")
 	List<File> layoutFiles = []
-	Map<File, ViewNameAndAttributes> fileToViewBindingsMap = [:]
+	Map<File, ViewBindingAttributes> fileToViewBindingsMap = [:]
 	LayoutXmlValidator layoutXmlValidator = new LayoutXmlValidator(
 		resFolder: resFolder, 
 		filesWithChanges: filesWithChanges,
@@ -49,7 +49,7 @@ class LayoutXmlValidatorTest extends Specification {
 		1 * bindingAttributeValidator.validate(fileToViewBindingsMap)
 	}
 	
-	List<ViewNameAndAttributes> viewBindingsFor(File layoutFile) {
+	List<ViewBindingAttributes> viewBindingsFor(File layoutFile) {
 		def viewNameAndAttributesList = []
 		
 		anyNumber().times {
@@ -61,7 +61,7 @@ class LayoutXmlValidatorTest extends Specification {
 	}
 	
 	def randomViewNameAndAttributes() {
-		new ViewNameAndAttributes()
+		new ViewBindingAttributes()
 	}
 	
 	def setup() {

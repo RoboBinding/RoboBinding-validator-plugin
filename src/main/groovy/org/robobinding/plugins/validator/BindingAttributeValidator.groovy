@@ -15,6 +15,12 @@
  */
 package org.robobinding.plugins.validator
 
+import org.robobinding.PendingAttributesForView
+import org.robobinding.PendingAttributesForViewImpl
+import org.robobinding.ViewResolutionErrorsException
+import org.robobinding.binder.BindingAttributeResolver
+import org.robobinding.binder.ViewResolutionResult
+
 /**
  *
  * @since 1.0
@@ -23,12 +29,31 @@ package org.robobinding.plugins.validator
  */
 class BindingAttributeValidator {
 
+	BindingAttributeResolver bindingAttributeResolver
 	ErrorReporter errorReporter
 	
-	void validate(Map<File, ViewNameAndAttributes> viewBindingsForFile) {
-		viewBindingsForFile.each { xmlFile, viewNameAndAttributes ->
+	void validate(Map<File, ViewBindingAttributes> viewBindingsForFile) {
+		viewBindingsForFile.each { xmlFile, viewBindingAttributes ->
 			errorReporter.clearErrorsFor(xmlFile)
+			
+			viewBindingAttributes.each { 
+				
+				PendingAttributesForView pendingAttributesForView = new PendingAttributesForViewImpl(null, null)
+				ViewResolutionResult result = bindingAttributeResolver.resolve(pendingAttributesForView)
+				
+				try {
+					result.assertNoErrors()
+				} catch (ViewResolutionErrorsException e) {
+					e.attributeErrors.each { attributeResolutionException ->
+						reportUnrecognizedBindingAttribute(viewBindingAttributes[attributeResolutionException.attributeName])
+					}
+				}
+			}
 		}
+	}
+	
+	def reportUnrecognizedBindingAttribute(File xmlFile, BindingAttribute bindingAttribute, String errorMessage) {
+		errorReporter.errorIn(xmlFile, bindingAttribute.lineNumber, errorMessage)
 	}
 	
 }

@@ -29,7 +29,7 @@ class FilesWithChanges {
 	FileChangeChecker fileChangeChecker	
 	FilesWithBindingAttributes filesWithBindingAttributes
 	
-	List<ViewNameAndAttributes> findUpdatedViewsWithBindings(File xmlFile) {
+	List<ViewBindingAttributes> findUpdatedViewsWithBindings(File xmlFile) {
 		if (fileChangeChecker.hasFileChangedSinceLastBuild(xmlFile)) {
 			return filesWithBindingAttributes.findViewsWithBindings(xmlFile.text)
 		}

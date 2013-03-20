@@ -40,11 +40,11 @@ class ViewBindingAttributesTest extends GroovyTestCase {
 	Map<String, String> attributes = [text: "value"]
 	Map<String, Integer> attributeLineNumbers = [text: 1]
 	String attributeName = "text"
-	ViewBindingAttributes viewBindingAttributes
+	ViewBindingAttributesOld viewBindingAttributes
 	
 	def void setUp() {
 		errorReporter = mock(ErrorReporter.class)
-		viewBindingAttributes = new ViewBindingAttributes(errorReporter: errorReporter, 
+		viewBindingAttributes = new ViewBindingAttributesOld(errorReporter: errorReporter, 
 			xmlFile: xmlFile, 
 			viewName: viewName, 
 			viewLineNumber: viewLineNumber, 

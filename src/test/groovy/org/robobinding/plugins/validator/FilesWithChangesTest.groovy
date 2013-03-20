@@ -45,7 +45,7 @@ class FilesWithChangesTest extends Specification {
 	
 	def "when evaluating file with changes, then find views with binding attributes"() {
 		given:
-		def viewsAndAttributes = [new ViewNameAndAttributes(), new ViewNameAndAttributes()]
+		def viewsAndAttributes = [new ViewBindingAttributes(), new ViewBindingAttributes()]
 		filesWithBindingAttributes.findViewsWithBindings(fileWithChangesText) >> viewsAndAttributes
 		
 		when:

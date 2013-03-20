@@ -15,6 +15,13 @@
  */
 package org.robobinding.plugins.validator
 
+import org.robobinding.AttributeResolutionException
+import org.robobinding.PendingAttributesForView
+import org.robobinding.UnrecognizedAttributeException
+import org.robobinding.ViewResolutionErrorsException
+import org.robobinding.binder.BindingAttributeResolver
+import org.robobinding.binder.ViewResolutionResult
+
 import spock.lang.Specification
 
 /**
@@ -26,11 +33,13 @@ import spock.lang.Specification
 class BindingAttributeValidatorTest extends Specification {
 
 	ErrorReporter errorReporter = Mock()
+	BindingAttributeResolver bindingAttributeResolver = Mock()
 	BindingAttributeValidator bindingAttributeValidator = new BindingAttributeValidator(
+		bindingAttributeResolver: bindingAttributeResolver,
 		errorReporter: errorReporter)
 	
 	def "when validating, first clear errors in files"() {
-		given: 
+		given:
 		def viewBindingsForFile = getViewBindingsForFile()
 		
 		when: 
@@ -42,8 +51,26 @@ class BindingAttributeValidatorTest extends Specification {
 		}
 	}
 	
-	def "given an error occurs whilst validating the file, then report error in file"() {
+	def "given an unrecognized attribute error occurs whilst validating a file, then report error in the file"() {
+		given:
+		def viewBindingsForFile = [:]
+		File xmlFile = Mock()
+		int unrecognizedAttributeLineNumber = 10
+		viewBindingsForFile[xmlFile] = new ViewBindingAttributes(bindingAttributes: [new BindingAttribute(attributeName: "attributeName", lineNumber: unrecognizedAttributeLineNumber)])
+		UnrecognizedAttributeException unrecognizedAttributeException = new UnrecognizedAttributeException("attributeName")
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> resolutionResultWith(unrecognizedAttributeException)
 		
+		when:
+		bindingAttributeValidator.validate(viewBindingsForFile)
+		
+		then:
+		1 * errorReporter.errorIn(xmlFile, unrecognizedAttributeLineNumber, unrecognizedAttributeException.getMessage())
+	}
+	
+	def resolutionResultWith(AttributeResolutionException attributeResolutionException) {
+		ViewResolutionErrorsException viewResolutionErrors = new ViewResolutionErrorsException(null)
+		viewResolutionErrors.addAttributeError(attributeResolutionException)
+		new ViewResolutionResult(null, viewResolutionErrors)
 	}
 	
 	def "given multiple errors occur whilst validating the files, then report errors in files"() {
@@ -54,9 +81,8 @@ class BindingAttributeValidatorTest extends Specification {
 		def viewBindingsForFile = [:]
 		10.times {
 			def file = Mock(File.class)
-			viewBindingsForFile[file] = new ViewNameAndAttributes()
+			viewBindingsForFile[file] = new ViewBindingAttributes()
 		}
 		viewBindingsForFile
 	}
-	
 }

@@ -31,7 +31,7 @@ class FilesWithBindingAttributesTest extends Specification {
 
 	def "given xml with the RoboBinding namespace declaration, then search for views with bindings using binding prefix"() {
 		given:
-		def viewsAndAttributes = [new ViewNameAndAttributes(), new ViewNameAndAttributes()]
+		def viewsAndAttributes = [new ViewBindingAttributes(), new ViewBindingAttributes()]
 		def xmlWithBindingDeclaration =
 		'''<?xml version="1.0" encoding="utf-8"?>
 		      <LinearLayout

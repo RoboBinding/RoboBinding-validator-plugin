@@ -29,7 +29,7 @@ class FilesWithBindingAttributes {
 	static final def NO_VIEWS_WITH_BINDINGS_FOUND = []
 	XmlWithBindingAttributes xmlWithBindingAttributes
 	
-	List<ViewNameAndAttributes> findViewsWithBindings(String xml) {
+	List<ViewBindingAttributes> findViewsWithBindings(String xml) {
 		def robobindingNamespaceDeclarationPrefix = getRoboBindingNamespaceDeclarationPrefix(xml)
 		
 		if (robobindingNamespaceDeclarationPrefix) {

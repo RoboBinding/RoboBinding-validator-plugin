@@ -111,7 +111,7 @@ class BindingAttributesValidator {
 		def viewLineNumber = xmlLineNumberDecorator.getLineNumber(viewNode)
 		def (actualBindingAttributes, bindingAttributeLineNumbers) = xmlLineNumberDecorator.getBindingAttributeDetailsMaps(bindingAttributesMap)
 		
-		def viewBindingAttributes = new ViewBindingAttributes(errorReporter: errorReporter,
+		def viewBindingAttributes = new ViewBindingAttributesOld(errorReporter: errorReporter,
 			xmlFile: xmlFile,
 			viewName: viewName,
 			viewLineNumber: viewLineNumber,

@@ -15,14 +15,14 @@
  */
 package org.robobinding.plugins.validator
 
-import groovy.lang.Closure;
-import groovy.transform.Immutable;
-import groovy.util.Node;
 import groovy.util.slurpersupport.GPathResult
 
-import java.io.File;
+import javax.xml.namespace.QName
 
-import javax.xml.namespace.QName;
+import org.mockito.Mockito
+import org.robobinding.binder.ViewNameResolver
+
+import android.view.View
 
 /**
  *
@@ -33,30 +33,41 @@ import javax.xml.namespace.QName;
 class XmlWithBindingAttributes {
 
 	XmlLineNumberDecorator xmlLineNumberDecorator
+	ViewNameResolver viewNameResolver
 	
-	List<ViewNameAndAttributes> findViewsWithBindings(String xml, String bindingPrefix) {
-		List<ViewNameAndAttributes> viewNamesAndAttributes = []
+	List<ViewBindingAttributes> findViewsWithBindings(String xml, String bindingPrefix) {
+		List<ViewBindingAttributes> viewBindingAttributes = []
 		String xmlWithLineNumbers = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
 		
 		GPathResult rootNode = new XmlSlurper().parseText(xmlWithLineNumbers)
 		
 		rootNode.children().eachWithIndex { it, index ->
-			processViewNode(it, viewNamesAndAttributes) 
+			processViewNode(it, viewBindingAttributes) 
 		}
 		
-		viewNamesAndAttributes
+		viewBindingAttributes
 	}
 	
 	def processViewNode(viewNode, viewNamesAndAttributes) {
-		ViewName viewName = new ViewName(value: viewNode.name(), lineNumber: getLineNumber(viewNode))
-		def rawBindingAttributesMap = getBindingAttributesForNode(viewNode)
-		addBindingAttributesToList(rawBindingAttributesMap, viewName, viewNamesAndAttributes)
+		String viewName = viewNameResolver.getViewNameFromLayoutTag(viewNode.name())
+		
+		if (viewName.startsWith("android")) {
+			View view = instanceOf(viewName)
+			int viewLineNumber = getLineNumber(viewNode)
+			def rawBindingAttributesMap = getBindingAttributesForNode(viewNode)
+			addBindingAttributesToList(rawBindingAttributesMap, view, viewLineNumber, viewNamesAndAttributes)
+		}
 		
 		viewNode.children().each { 
 			processViewNode(it, viewNamesAndAttributes) 
 		}
 	}
 
+	def instanceOf(fullyQualifiedViewName) {
+		Class viewClass = Class.forName(fullyQualifiedViewName)
+		Mockito.mock(viewClass)
+	}
+	
 	private getBindingAttributesForNode(viewNode) {
 		def viewAttributes = viewNode.attributes()
 		def nodeField = viewNode.getClass().getDeclaredField("node")
@@ -72,33 +83,36 @@ class XmlWithBindingAttributes {
 		viewNode.attributes()[XmlLineNumberDecorator.LINE_NUMBER_ATTRIBUTE].toInteger()
 	}
 	
-	private addBindingAttributesToList(rawBindingAttributesMap, ViewName viewName, viewNamesAndAttributes) {
-		List<BindingAttribute> bindingAttributes = getBindingAttributes(rawBindingAttributesMap)
+	private addBindingAttributesToList(rawBindingAttributesMap, View view, int viewLineNumber, viewNamesAndAttributes) {
+		Map<String, BindingAttribute> bindingAttributes = getBindingAttributes(rawBindingAttributesMap)
 		if (bindingAttributes) {
 			
-			def viewBindingAttributes = new ViewNameAndAttributes(
-					viewName: viewName,
+			def viewBindingAttributes = new ViewBindingAttributes(
+					view: view,	
+					viewLineNumber: viewLineNumber,
 					bindingAttributes: bindingAttributes)
 			
 			viewNamesAndAttributes << viewBindingAttributes
 		}
 	}
 	
-	private List<BindingAttribute> getBindingAttributes(rawBindingAttributesMap) {
-		def bindingAttributes = []
+	private Map<String, BindingAttribute> getBindingAttributes(rawBindingAttributesMap) {
+		def bindingAttributes = [:]
 		
 		rawBindingAttributesMap.each { attributeQName, attributeValue ->
-			String attributeName = QName.valueOf(attributeQName).localPart
-			bindingAttributes << createBindingAttribute(attributeName, attributeValue)
+			String rawAttributeName = QName.valueOf(attributeQName).localPart
+			addBindingAttributeToMap(rawAttributeName, attributeValue, bindingAttributes)
 		}
 		
 		bindingAttributes
 	}
-	
-	private BindingAttribute createBindingAttribute(String attributeName, String attributeValue) {
-		String[] attributeDetails = attributeName.split('_')
-		new BindingAttribute(attributeName: attributeDetails[0],
-			 attributeValue: attributeValue,
-			 lineNumber: attributeDetails[1].toInteger())
+
+	private addBindingAttributeToMap(String rawAttributeName, String attributeValue, Map bindingAttributes) {
+		String[] attributeDetails = rawAttributeName.split('_')
+		bindingAttributes[attributeDetails[0]] = new BindingAttribute(
+				attributeName: attributeDetails[0],
+				attributeValue: attributeValue,
+				lineNumber: attributeDetails[1].toInteger())
 	}
+	
 }
