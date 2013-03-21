@@ -80,7 +80,7 @@ class XmlWithBindingAttributesTest extends Specification {
 		results[1].bindingAttributes['visibility'].lineNumber == 18
 	}
 	
-	def "should not (yet) process custom views"() {
+	def "should not [yet] process custom views"() {
 		given:
 		String rawXml = "<raw-xml/>"
 		String xmlWithLineNumbers =

@@ -41,6 +41,7 @@ class BindingAttributeValidatorTest extends Specification {
 	def "when validating, first clear errors in files"() {
 		given:
 		def viewBindingsForFile = getViewBindingsForFile()
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult()
 		
 		when: 
 		bindingAttributeValidator.validate(viewBindingsForFile)
@@ -56,9 +57,9 @@ class BindingAttributeValidatorTest extends Specification {
 		def viewBindingsForFile = [:]
 		File xmlFile = Mock()
 		int unrecognizedAttributeLineNumber = 10
-		viewBindingsForFile[xmlFile] = new ViewBindingAttributes(bindingAttributes: [new BindingAttribute(attributeName: "attributeName", lineNumber: unrecognizedAttributeLineNumber)])
+		viewBindingsForFile[xmlFile] = [new ViewBindingAttributes(bindingAttributes: [attributeName: new BindingAttribute(attributeName: "attributeName", lineNumber: unrecognizedAttributeLineNumber)])]
 		UnrecognizedAttributeException unrecognizedAttributeException = new UnrecognizedAttributeException("attributeName")
-		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> resolutionResultWith(unrecognizedAttributeException)
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult(unrecognizedAttributeException)
 		
 		when:
 		bindingAttributeValidator.validate(viewBindingsForFile)
@@ -67,9 +68,11 @@ class BindingAttributeValidatorTest extends Specification {
 		1 * errorReporter.errorIn(xmlFile, unrecognizedAttributeLineNumber, unrecognizedAttributeException.getMessage())
 	}
 	
-	def resolutionResultWith(AttributeResolutionException attributeResolutionException) {
+	def newResolutionResult(AttributeResolutionException... attributeResolutionExceptions) {
 		ViewResolutionErrorsException viewResolutionErrors = new ViewResolutionErrorsException(null)
-		viewResolutionErrors.addAttributeError(attributeResolutionException)
+		attributeResolutionExceptions.each {
+			viewResolutionErrors.addAttributeError(it)
+		}
 		new ViewResolutionResult(null, viewResolutionErrors)
 	}
 	

@@ -17,9 +17,13 @@ package org.robobinding.plugins.validator
 
 import org.robobinding.PendingAttributesForView
 import org.robobinding.PendingAttributesForViewImpl
+import org.robobinding.UnrecognizedAttributeException;
 import org.robobinding.ViewResolutionErrorsException
 import org.robobinding.binder.BindingAttributeResolver
 import org.robobinding.binder.ViewResolutionResult
+
+import android.view.View
+
 
 /**
  *
@@ -31,29 +35,27 @@ class BindingAttributeValidator {
 
 	BindingAttributeResolver bindingAttributeResolver
 	ErrorReporter errorReporter
-	
-	void validate(Map<File, ViewBindingAttributes> viewBindingsForFile) {
-		viewBindingsForFile.each { xmlFile, viewBindingAttributes ->
+
+	void validate(Map<File, List<ViewBindingAttributes>> viewBindingsForFile) {
+		viewBindingsForFile.each { xmlFile, viewBindingAttributesList ->
 			errorReporter.clearErrorsFor(xmlFile)
-			
-			viewBindingAttributes.each { 
-				
-				PendingAttributesForView pendingAttributesForView = new PendingAttributesForViewImpl(null, null)
-				ViewResolutionResult result = bindingAttributeResolver.resolve(pendingAttributesForView)
-				
+
+			viewBindingAttributesList.each { viewBindingAttributes ->
+				ViewResolutionResult result = bindingAttributeResolver.resolve(viewBindingAttributes.asPendingAttributesForView())
+
 				try {
 					result.assertNoErrors()
 				} catch (ViewResolutionErrorsException e) {
 					e.attributeErrors.each { attributeResolutionException ->
-						reportUnrecognizedBindingAttribute(viewBindingAttributes[attributeResolutionException.attributeName])
+						def bindingAttribute = viewBindingAttributes[attributeResolutionException.getAttribute()]
+						reportUnrecognizedBindingAttribute(xmlFile, bindingAttribute, attributeResolutionException.getMessage())
 					}
 				}
 			}
 		}
 	}
-	
+
 	def reportUnrecognizedBindingAttribute(File xmlFile, BindingAttribute bindingAttribute, String errorMessage) {
 		errorReporter.errorIn(xmlFile, bindingAttribute.lineNumber, errorMessage)
 	}
-	
 }
