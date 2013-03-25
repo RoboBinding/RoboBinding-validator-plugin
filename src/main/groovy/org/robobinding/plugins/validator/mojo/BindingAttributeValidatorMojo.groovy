@@ -21,9 +21,16 @@ import org.apache.maven.plugins.annotations.LifecyclePhase
 import org.apache.maven.plugins.annotations.Mojo
 import org.apache.maven.plugins.annotations.Parameter
 import org.codehaus.mojo.groovy.GroovyMojo
-import org.robobinding.plugins.validator.BindingAttributesValidator
+import org.robobinding.binder.BindingAttributeResolver
+import org.robobinding.binder.ViewNameResolver
+import org.robobinding.plugins.validator.BindingAttributeValidator
 import org.robobinding.plugins.validator.ErrorReporter
 import org.robobinding.plugins.validator.FileChangeChecker
+import org.robobinding.plugins.validator.FilesWithBindingAttributes
+import org.robobinding.plugins.validator.FilesWithChanges
+import org.robobinding.plugins.validator.LayoutXmlValidator
+import org.robobinding.plugins.validator.XmlLineNumberDecorator
+import org.robobinding.plugins.validator.XmlWithBindingAttributes
 import org.sonatype.plexus.build.incremental.BuildContext
 
 /**
@@ -41,10 +48,6 @@ import org.sonatype.plexus.build.incremental.BuildContext
 	configurator="include-project-dependencies")
 class BindingAttributeValidatorMojo extends GroovyMojo
 {
-	/**
-	 * @parameter expression="${basedir}"
-	 * @required
-	 */
 	@Parameter(property='basedir',required=true)
 	public File baseFolder
 	
@@ -55,17 +58,32 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 	{
 		log.info("Validating binding attributes...")
 		
-		FileChangeChecker fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
 		ErrorReporter errorReporter = new MojoErrorReporter(buildContext: buildContext)
-		new BindingAttributesValidator(baseFolder, fileChangeChecker, errorReporter).validate()
+		FilesWithChanges filesWithChanges = createFilesWithChangesValidator()
+		BindingAttributeValidator bindingAttributeValidator = createBindingAttributeValidator(errorReporter)
+		new LayoutXmlValidator(resFolder: new File(baseFolder, "res"), filesWithChanges: filesWithChanges, bindingAttributeValidator: bindingAttributeValidator)
 		
 		if (errorReporter.errorMessages)
 		   throw new MojoFailureException(describe(errorReporter.errorMessages))
 		
 		log.info("Done!")
 	}
+
+	private FilesWithChanges createFilesWithChangesValidator() {
+		FileChangeChecker fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
+		XmlLineNumberDecorator xmlLineNumberDecorator = new XmlLineNumberDecorator()
+		ViewNameResolver viewNameResolver = new ViewNameResolver()
+		XmlWithBindingAttributes xmlWithBindingAttributes = new XmlWithBindingAttributes(xmlLineNumberDecorator: xmlLineNumberDecorator, viewNameResolver: viewNameResolver)
+		FilesWithBindingAttributes filesWithBindingAttributes = new FilesWithBindingAttributes(xmlWithBindingAttributes: xmlWithBindingAttributes)
+		new FilesWithChanges(fileChangeChecker: fileChangeChecker, filesWithBindingAttributes: filesWithBindingAttributes)
+	}
 	
-	def describe(errorMessages) {
+	private BindingAttributeValidator createBindingAttributeValidator(ErrorReporter errorReporter) {
+		BindingAttributeResolver bindingAttributeResolver = new BindingAttributeResolver()
+		new BindingAttributeValidator(bindingAttributeResolver: bindingAttributeResolver, errorReporter: errorReporter)
+	}
+	
+	private String describe(errorMessages) {
 		"${errorMessages.join('\n\n')}\n\n"
 	}
 }

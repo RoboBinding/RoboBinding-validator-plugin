@@ -28,4 +28,6 @@ interface ErrorReporter {
 	void errorIn(File file, int lineNumber, String errorMessage)
 	
 	void clearErrorsFor(File file)
+	
+	List<String> getErrorMessages()
 }

@@ -19,6 +19,8 @@ import org.robobinding.AttributeResolutionException
 import org.robobinding.PendingAttributesForView
 import org.robobinding.UnrecognizedAttributeException
 import org.robobinding.ViewResolutionErrorsException
+import org.robobinding.attribute.MalformedAttributeException;
+import org.robobinding.attribute.MissingRequiredAttributesException;
 import org.robobinding.binder.BindingAttributeResolver
 import org.robobinding.binder.ViewResolutionResult
 
@@ -68,10 +70,50 @@ class BindingAttributeValidatorTest extends Specification {
 		1 * errorReporter.errorIn(xmlFile, unrecognizedAttributeLineNumber, unrecognizedAttributeException.getMessage())
 	}
 	
+	def "given a malformed attribute error occurs whilst validating a file, then report error in the file"() {
+		given:
+		def viewBindingsForFile = [:]
+		File xmlFile = Mock()
+		int malformedAttributeLineNumber = 20
+		viewBindingsForFile[xmlFile] = [new ViewBindingAttributes(bindingAttributes: [attributeName: new BindingAttribute(attributeName: "attributeName", lineNumber: malformedAttributeLineNumber)])]
+		MalformedAttributeException malformedAttributeException = new MalformedAttributeException("attributeName", "")
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult(malformedAttributeException)
+		
+		when:
+		bindingAttributeValidator.validate(viewBindingsForFile)
+		
+		then:
+		1 * errorReporter.errorIn(xmlFile, malformedAttributeLineNumber, malformedAttributeException.getMessage())
+	}
+	
+	def "given a missing required binding attributes error occurs whilst validating a file, then report error in the file"() {
+		given:
+		def viewBindingsForFile = [:]
+		File xmlFile = Mock()
+		int viewLineNumber = 30
+		viewBindingsForFile[xmlFile] = [new ViewBindingAttributes(viewLineNumber: viewLineNumber, bindingAttributes: [attributeName: new BindingAttribute(attributeName: "attributeName")])]
+		MissingRequiredAttributesException missingAttributeException = new MissingRequiredAttributesException(["attributeName1", "attributeName2"])
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult(missingAttributeException)
+		
+		when:
+		bindingAttributeValidator.validate(viewBindingsForFile)
+		
+		then:
+		1 * errorReporter.errorIn(xmlFile, viewLineNumber, missingAttributeException.getMessage())
+	}
+	
 	def newResolutionResult(AttributeResolutionException... attributeResolutionExceptions) {
 		ViewResolutionErrorsException viewResolutionErrors = new ViewResolutionErrorsException(null)
 		attributeResolutionExceptions.each {
 			viewResolutionErrors.addAttributeError(it)
+		}
+		new ViewResolutionResult(null, viewResolutionErrors)
+	}
+	
+	def newResolutionResult(MissingRequiredAttributesException... missingRequiredAttributesException) {
+		ViewResolutionErrorsException viewResolutionErrors = new ViewResolutionErrorsException(null)
+		missingRequiredAttributesException.each {
+			viewResolutionErrors.addMissingRequiredAttributeError(it)
 		}
 		new ViewResolutionResult(null, viewResolutionErrors)
 	}
@@ -84,7 +126,7 @@ class BindingAttributeValidatorTest extends Specification {
 		def viewBindingsForFile = [:]
 		10.times {
 			def file = Mock(File.class)
-			viewBindingsForFile[file] = new ViewBindingAttributes()
+			viewBindingsForFile[file] = [new ViewBindingAttributes()]
 		}
 		viewBindingsForFile
 	}

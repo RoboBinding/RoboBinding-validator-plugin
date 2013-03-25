@@ -15,14 +15,9 @@
  */
 package org.robobinding.plugins.validator
 
-import org.robobinding.PendingAttributesForView
-import org.robobinding.PendingAttributesForViewImpl
-import org.robobinding.UnrecognizedAttributeException;
 import org.robobinding.ViewResolutionErrorsException
 import org.robobinding.binder.BindingAttributeResolver
 import org.robobinding.binder.ViewResolutionResult
-
-import android.view.View
 
 
 /**
@@ -40,22 +35,37 @@ class BindingAttributeValidator {
 		viewBindingsForFile.each { xmlFile, viewBindingAttributesList ->
 			errorReporter.clearErrorsFor(xmlFile)
 
-			viewBindingAttributesList.each { viewBindingAttributes ->
-				ViewResolutionResult result = bindingAttributeResolver.resolve(viewBindingAttributes.asPendingAttributesForView())
+			resolveAllBindingAttributesInFile(viewBindingAttributesList, xmlFile)
+		}
+	}
 
-				try {
-					result.assertNoErrors()
-				} catch (ViewResolutionErrorsException e) {
-					e.attributeErrors.each { attributeResolutionException ->
-						def bindingAttribute = viewBindingAttributes[attributeResolutionException.getAttribute()]
-						reportUnrecognizedBindingAttribute(xmlFile, bindingAttribute, attributeResolutionException.getMessage())
-					}
-				}
+	private resolveAllBindingAttributesInFile(List<ViewBindingAttributes> viewBindingAttributesList, File xmlFile) {
+		viewBindingAttributesList.each { ViewBindingAttributes viewBindingAttributes ->
+			ViewResolutionResult result = bindingAttributeResolver.resolve(viewBindingAttributes.asPendingAttributesForView())
+
+			try {
+				result.assertNoErrors()
+			} catch (ViewResolutionErrorsException e) {
+				reportResolutionErrors(e, viewBindingAttributes, xmlFile)
 			}
 		}
 	}
 
-	def reportUnrecognizedBindingAttribute(File xmlFile, BindingAttribute bindingAttribute, String errorMessage) {
+	private reportResolutionErrors(ViewResolutionErrorsException e, ViewBindingAttributes viewBindingAttributes, File xmlFile) {
+		e.attributeErrors.each { attributeResolutionException ->
+			def bindingAttribute = viewBindingAttributes[attributeResolutionException.getAttribute()]
+			reportAttributeResolutionError(xmlFile, bindingAttribute, attributeResolutionException.getMessage())
+		}
+		e.missingRequiredAttributeErrors.each { missingRequiredAttributesException ->
+			reportMissingRequiredAttributesError(xmlFile, viewBindingAttributes.viewLineNumber, missingRequiredAttributesException.getMessage())
+		}
+	}
+
+	def reportAttributeResolutionError(File xmlFile, BindingAttribute bindingAttribute, String errorMessage) {
 		errorReporter.errorIn(xmlFile, bindingAttribute.lineNumber, errorMessage)
+	}
+	
+	def reportMissingRequiredAttributesError(File xmlFile, int viewLineNumber, String errorMessage) {
+		errorReporter.errorIn(xmlFile, viewLineNumber, errorMessage)
 	}
 }

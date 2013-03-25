@@ -41,4 +41,8 @@ class MojoErrorReporter implements ErrorReporter
 	void clearErrorsFor(File file) {
 		buildContext.removeMessages(file)
 	}
+	
+	List<String> getErrorMessages() {
+		errorMessages
+	}
 }
