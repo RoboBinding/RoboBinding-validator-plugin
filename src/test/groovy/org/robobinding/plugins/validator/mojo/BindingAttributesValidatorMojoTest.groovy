@@ -25,11 +25,11 @@ import android.view.View
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class BindingAttributeValidatorMojoTest extends GroovyTestCase {
+class BindingAttributesValidatorMojoTest extends GroovyTestCase {
 
 	def void test_givenErrorMessagesList_whenDescribingErrors_theReturnMessageInCorrectFormat() {
 		
-		def mojo = new BindingAttributeValidatorMojo()
+		def mojo = new BindingAttributesValidatorMojo()
 		def errorMessages = ["error1", "error2", "error3"]
 		
 		def errorMessage = mojo.describe(errorMessages)

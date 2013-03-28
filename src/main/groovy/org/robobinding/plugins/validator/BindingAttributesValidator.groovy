@@ -1,5 +1,5 @@
 /**
- * Copyright 2012 Cheng Wei, Robert Taylor
+ * Copyright 2013 Cheng Wei, Robert Taylor
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
  */
 package org.robobinding.plugins.validator
 
+import org.robobinding.ViewResolutionErrorsException
+import org.robobinding.binder.BindingAttributeResolver
+import org.robobinding.binder.ViewResolutionResult
+
 
 /**
  *
@@ -24,102 +28,44 @@ package org.robobinding.plugins.validator
  */
 class BindingAttributesValidator {
 
-	static final def LAYOUT_FOLDER = ~/[layout].*/
-	static final def XML_FILE = ~/.*[.xml]/
-	static final def ROBOBINDING_NAMESPACE = 'http://robobinding.org/android'
-
-	File resFolder
-	FileChangeChecker fileChangeChecker
+	BindingAttributeResolver bindingAttributeResolver
 	ErrorReporter errorReporter
-	XmlLineNumberDecorator xmlLineNumberDecorator
+
+	void validate(Map<File, List<ViewBindingAttributes>> viewBindingsForFile) {
+		viewBindingsForFile.each { xmlFile, viewBindingAttributesList ->
+			//errorReporter.clearErrorsFor(xmlFile)
+
+			resolveAllBindingAttributesInFile(viewBindingAttributesList, xmlFile)
+		}
+	}
+
+	private resolveAllBindingAttributesInFile(List<ViewBindingAttributes> viewBindingAttributesList, File xmlFile) {
+		viewBindingAttributesList.each { ViewBindingAttributes viewBindingAttributes ->
+			ViewResolutionResult result = bindingAttributeResolver.resolve(viewBindingAttributes.asPendingAttributesForView())
+
+			try {
+				result.assertNoErrors()
+			} catch (ViewResolutionErrorsException e) {
+				reportResolutionErrors(e, viewBindingAttributes, xmlFile)
+			}
+		}
+	}
+
+	private reportResolutionErrors(ViewResolutionErrorsException e, ViewBindingAttributes viewBindingAttributes, File xmlFile) {
+		e.attributeErrors.each { attributeResolutionException ->
+			def bindingAttribute = viewBindingAttributes[attributeResolutionException.getAttribute()]
+			reportAttributeResolutionError(xmlFile, bindingAttribute, attributeResolutionException.getMessage())
+		}
+		e.missingRequiredAttributeErrors.each { missingRequiredAttributesException ->
+			reportMissingRequiredAttributesError(xmlFile, viewBindingAttributes.viewLineNumber, missingRequiredAttributesException.getMessage())
+		}
+	}
+
+	def reportAttributeResolutionError(File xmlFile, BindingAttribute bindingAttribute, String errorMessage) {
+		errorReporter.errorIn(xmlFile, bindingAttribute.lineNumber, errorMessage)
+	}
 	
-	BindingAttributesValidator(File baseFolder, FileChangeChecker fileChangeChecker, ErrorReporter errorReporter) {
-		resFolder = new File(baseFolder, "res")
-		this.fileChangeChecker = fileChangeChecker
-		this.errorReporter = errorReporter
-		xmlLineNumberDecorator = new XmlLineNumberDecorator()
-	}
-
-	def validate() {
-		inEachLayoutFolder { layoutFolder ->
-
-			inEachXmlFileWithBindingsThatHasChangedInsideThe(layoutFolder) { xmlFile ->
-
-				forEachViewWithBindingAttributesInThe(xmlFile) { viewBindingAttributes ->
-
-					viewBindingAttributes.validate()
-				}
-			}
-		}
-	}
-
-	def inEachLayoutFolder (Closure c) {
-		resFolder.eachDirMatch(LAYOUT_FOLDER) { c.call(it) }
-	}
-
-	def inEachXmlFile(File folder, Closure c) {
-		folder.eachFileMatch(XML_FILE) { c.call(it) }
-	}
-
-	def inEachXmlFileWithBindingsThatHasChangedInsideThe(folder, Closure c) {
-		inEachXmlFile(folder) {
-			if (fileChangeChecker.hasFileChangedSinceLastBuild(it)) {
-				if (getRoboBindingNamespaceDeclaration(it.text)) {
-					c.call(it)
-				}
-			}
-		}
-	}
-
-	def getRoboBindingNamespaceDeclaration(xml) {
-		def rootNode = new XmlSlurper().parseText(xml)
-
-		def xmlClass = rootNode.getClass()
-		def gpathClass = xmlClass.getSuperclass()
-		def namespaceTagHintsField = gpathClass.getDeclaredField("namespaceTagHints")
-		namespaceTagHintsField.setAccessible(true)
-
-		def namespaceDeclarations = namespaceTagHintsField.get(rootNode)
-
-		return namespaceDeclarations.find { key, value ->
-			value == ROBOBINDING_NAMESPACE
-		}?.key
-	}
-
-	def forEachViewWithBindingAttributesInThe(xmlFile, Closure c) {
-		def xml = xmlFile.text
-		def bindingPrefix = getRoboBindingNamespaceDeclaration(xml)
-		def decoratedXml = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
-		
-		def rootNode = new XmlSlurper().parseText(decoratedXml)
-		def nodeChildren = rootNode.children()
-		nodeChildren.each { processViewNode(it, xmlFile, c) }
-	}
-
-	def processViewNode(viewNode, xmlFile, Closure c) {
-		def viewName = viewNode.name()
-		def viewAttributes = viewNode.attributes()
-
-		def nodeField = viewNode.getClass().getDeclaredField("node")
-		nodeField.setAccessible(true)
-		def node = nodeField.get(viewNode)
-
-		def bindingAttributes = node.@attributeNamespaces.findAll { it.value == ROBOBINDING_NAMESPACE }
-		def bindingAttributeNames = bindingAttributes*.key
-		def bindingAttributesMap = viewAttributes.subMap(bindingAttributeNames)
-		
-		def viewLineNumber = xmlLineNumberDecorator.getLineNumber(viewNode)
-		def (actualBindingAttributes, bindingAttributeLineNumbers) = xmlLineNumberDecorator.getBindingAttributeDetailsMaps(bindingAttributesMap)
-		
-		def viewBindingAttributes = new ViewBindingAttributesOld(errorReporter: errorReporter,
-			xmlFile: xmlFile,
-			viewName: viewName,
-			viewLineNumber: viewLineNumber,
-			attributes: actualBindingAttributes,
-			attributeLineNumbers: bindingAttributeLineNumbers)
-		
-		c.call(viewBindingAttributes)
-
-		viewNode.children().each { processViewNode(it, xmlFile, c) }
+	def reportMissingRequiredAttributesError(File xmlFile, int viewLineNumber, String errorMessage) {
+		errorReporter.errorIn(xmlFile, viewLineNumber, errorMessage)
 	}
 }

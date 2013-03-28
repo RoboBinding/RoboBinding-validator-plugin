@@ -27,7 +27,7 @@ import spock.lang.Specification
 class LayoutXmlValidatorTest extends Specification {
 
 	FilesWithChanges filesWithChanges = Mock()
-	BindingAttributeValidator bindingAttributeValidator = Mock()
+	BindingAttributesValidator bindingAttributeValidator = Mock()
 	File resFolder = new File("test-tmp/res")
 	List<File> layoutFiles = []
 	Map<File, ViewBindingAttributes> fileToViewBindingsMap = [:]

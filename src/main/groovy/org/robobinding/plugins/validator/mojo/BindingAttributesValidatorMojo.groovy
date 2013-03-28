@@ -20,10 +20,11 @@ import org.apache.maven.plugins.annotations.Component
 import org.apache.maven.plugins.annotations.LifecyclePhase
 import org.apache.maven.plugins.annotations.Mojo
 import org.apache.maven.plugins.annotations.Parameter
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.mojo.groovy.GroovyMojo
 import org.robobinding.binder.BindingAttributeResolver
 import org.robobinding.binder.ViewNameResolver
-import org.robobinding.plugins.validator.BindingAttributeValidator
+import org.robobinding.plugins.validator.BindingAttributesValidator
 import org.robobinding.plugins.validator.ErrorReporter
 import org.robobinding.plugins.validator.FileChangeChecker
 import org.robobinding.plugins.validator.FilesWithBindingAttributes
@@ -45,8 +46,9 @@ import org.sonatype.plexus.build.incremental.BuildContext
  */
 @Mojo(name="validate-bindings", 
 	defaultPhase=LifecyclePhase.COMPILE, 
-	configurator="include-project-dependencies")
-class BindingAttributeValidatorMojo extends GroovyMojo
+	requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME,
+	threadSafe=true)
+class BindingAttributesValidatorMojo extends GroovyMojo
 {
 	@Parameter(property='basedir',required=true)
 	public File baseFolder
@@ -60,8 +62,9 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 		
 		ErrorReporter errorReporter = new MojoErrorReporter(buildContext: buildContext)
 		FilesWithChanges filesWithChanges = createFilesWithChangesValidator()
-		BindingAttributeValidator bindingAttributeValidator = createBindingAttributeValidator(errorReporter)
-		new LayoutXmlValidator(resFolder: new File(baseFolder, "res"), filesWithChanges: filesWithChanges, bindingAttributeValidator: bindingAttributeValidator)
+		BindingAttributesValidator bindingAttributeValidator = createBindingAttributeValidator(errorReporter)
+		LayoutXmlValidator layoutXmlValidator = new LayoutXmlValidator(resFolder: new File(baseFolder, "res"), filesWithChanges: filesWithChanges, bindingAttributeValidator: bindingAttributeValidator)
+		layoutXmlValidator.validate()
 		
 		if (errorReporter.errorMessages)
 		   throw new MojoFailureException(describe(errorReporter.errorMessages))
@@ -78,9 +81,9 @@ class BindingAttributeValidatorMojo extends GroovyMojo
 		new FilesWithChanges(fileChangeChecker: fileChangeChecker, filesWithBindingAttributes: filesWithBindingAttributes)
 	}
 	
-	private BindingAttributeValidator createBindingAttributeValidator(ErrorReporter errorReporter) {
+	private BindingAttributesValidator createBindingAttributeValidator(ErrorReporter errorReporter) {
 		BindingAttributeResolver bindingAttributeResolver = new BindingAttributeResolver()
-		new BindingAttributeValidator(bindingAttributeResolver: bindingAttributeResolver, errorReporter: errorReporter)
+		new BindingAttributesValidator(bindingAttributeResolver: bindingAttributeResolver, errorReporter: errorReporter)
 	}
 	
 	private String describe(errorMessages) {

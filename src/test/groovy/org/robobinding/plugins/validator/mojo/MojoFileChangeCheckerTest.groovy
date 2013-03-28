@@ -18,6 +18,8 @@ package org.robobinding.plugins.validator.mojo
 import org.mockito.Mockito
 import org.sonatype.plexus.build.incremental.BuildContext
 
+import spock.lang.Specification
+
 
 /**
  *
@@ -25,17 +27,22 @@ import org.sonatype.plexus.build.incremental.BuildContext
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class MojoFileChangeCheckerTest extends GroovyTestCase {
+class MojoFileChangeCheckerTest extends Specification {
 
-	def void test_whenCheckingIfFileHasChanged_thenDelegateToBuildContext() {
-		
-		def buildContext = Mockito.mock(BuildContext.class)
+	BuildContext buildContext = Mock(BuildContext.class)
+	MojoFileChangeChecker mojoFileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
+	
+	def "when checking if file has changed then delegate to BuildContext"() {
+		given:
 		def aFile = new File("")
 		def fileHasChanged = trueOrFalse()
-		Mockito.when(buildContext.hasDelta(aFile)).thenReturn(fileHasChanged)
-		def mojoFileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
+		buildContext.hasDelta(aFile) >> fileHasChanged
 		
-		assertEquals(fileHasChanged, mojoFileChangeChecker.hasFileChangedSinceLastBuild(aFile))
+		when:
+		def result = mojoFileChangeChecker.hasFileChangedSinceLastBuild(aFile)
+		
+		then:
+		fileHasChanged == result
 	}
 	
 	def trueOrFalse() {

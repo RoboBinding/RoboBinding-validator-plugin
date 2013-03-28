@@ -1,25 +1,30 @@
 /**
-* Copyright 2012 Cheng Wei, Robert Taylor
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*   http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions
-* and limitations under the License.
-*/
+ * Copyright 2013 Cheng Wei, Robert Taylor
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
+ */
 package org.robobinding.plugins.validator
 
-import org.mockito.Mockito
+import org.robobinding.AttributeResolutionException
+import org.robobinding.PendingAttributesForView
+import org.robobinding.UnrecognizedAttributeException
+import org.robobinding.ViewResolutionErrorsException
+import org.robobinding.attribute.MalformedAttributeException;
+import org.robobinding.attribute.MissingRequiredAttributesException;
+import org.robobinding.binder.BindingAttributeResolver
+import org.robobinding.binder.ViewResolutionResult
 
-import android.util.AttributeSet
-import android.view.View
-
+import spock.lang.Specification
 
 /**
  *
@@ -27,166 +32,102 @@ import android.view.View
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class BindingAttributesValidatorTest extends GroovyTestCase {
+class BindingAttributesValidatorTest extends Specification {
 
-	private static final String TEMP_PATH = "."
+	ErrorReporter errorReporter = Mock()
+	BindingAttributeResolver bindingAttributeResolver = Mock()
+	BindingAttributesValidator bindingAttributeValidator = new BindingAttributesValidator(
+		bindingAttributeResolver: bindingAttributeResolver,
+		errorReporter: errorReporter)
 	
-	BindingAttributesValidator validator
-	File resFolder
-	int layoutFoldersCount
-	int xmlFilesCount
+//	def "when validating, first clear errors in files"() {
+//		given:
+//		def viewBindingsForFile = getViewBindingsForFile()
+//		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult()
+//		
+//		when: 
+//		bindingAttributeValidator.validate(viewBindingsForFile)
+//		
+//		then:
+//		viewBindingsForFile.each { file, viewNameAndAttributes ->
+//			1 * errorReporter.clearErrorsFor(file)
+//		}
+//	}
 	
-	def void test_whenProcessingEachLayoutFolder_thenInvokeTheClosureOnEachFolder() {
-		createLayoutFolders()
-
-		def layoutFoldersProcessed = 0
-		validator.inEachLayoutFolder { folder ->
-			
-			assertTrue(folder.isDirectory())
-			layoutFoldersProcessed++
+	def "given an unrecognized attribute error occurs whilst validating a file, then report error in the file"() {
+		given:
+		def viewBindingsForFile = [:]
+		File xmlFile = Mock()
+		int unrecognizedAttributeLineNumber = 10
+		viewBindingsForFile[xmlFile] = [new ViewBindingAttributes(bindingAttributes: [attributeName: new BindingAttribute(attributeName: "attributeName", lineNumber: unrecognizedAttributeLineNumber)])]
+		UnrecognizedAttributeException unrecognizedAttributeException = new UnrecognizedAttributeException("attributeName")
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult(unrecognizedAttributeException)
+		
+		when:
+		bindingAttributeValidator.validate(viewBindingsForFile)
+		
+		then:
+		1 * errorReporter.errorIn(xmlFile, unrecognizedAttributeLineNumber, unrecognizedAttributeException.getMessage())
+	}
+	
+	def "given a malformed attribute error occurs whilst validating a file, then report error in the file"() {
+		given:
+		def viewBindingsForFile = [:]
+		File xmlFile = Mock()
+		int malformedAttributeLineNumber = 20
+		viewBindingsForFile[xmlFile] = [new ViewBindingAttributes(bindingAttributes: [attributeName: new BindingAttribute(attributeName: "attributeName", lineNumber: malformedAttributeLineNumber)])]
+		MalformedAttributeException malformedAttributeException = new MalformedAttributeException("attributeName", "")
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult(malformedAttributeException)
+		
+		when:
+		bindingAttributeValidator.validate(viewBindingsForFile)
+		
+		then:
+		1 * errorReporter.errorIn(xmlFile, malformedAttributeLineNumber, malformedAttributeException.getMessage())
+	}
+	
+	def "given a missing required binding attributes error occurs whilst validating a file, then report error in the file"() {
+		given:
+		def viewBindingsForFile = [:]
+		File xmlFile = Mock()
+		int viewLineNumber = 30
+		viewBindingsForFile[xmlFile] = [new ViewBindingAttributes(viewLineNumber: viewLineNumber, bindingAttributes: [attributeName: new BindingAttribute(attributeName: "attributeName")])]
+		MissingRequiredAttributesException missingAttributeException = new MissingRequiredAttributesException(["attributeName1", "attributeName2"])
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult(missingAttributeException)
+		
+		when:
+		bindingAttributeValidator.validate(viewBindingsForFile)
+		
+		then:
+		1 * errorReporter.errorIn(xmlFile, viewLineNumber, missingAttributeException.getMessage())
+	}
+	
+	def newResolutionResult(AttributeResolutionException... attributeResolutionExceptions) {
+		ViewResolutionErrorsException viewResolutionErrors = new ViewResolutionErrorsException(null)
+		attributeResolutionExceptions.each {
+			viewResolutionErrors.addAttributeError(it)
 		}
-		
-		assertEquals(layoutFoldersCount, layoutFoldersProcessed)
+		new ViewResolutionResult(null, viewResolutionErrors)
 	}
 	
-	def void test_whenProcessingEachXmlFile_thenInvokeTheClosureOnEachXmlFile() {
-		createLayoutXmlFiles()
-
-		def xmlFilesProcessed = 0
-		validator.inEachXmlFile(resFolder) { file ->
-			
-			assertTrue(file.isFile())
-			xmlFilesProcessed++
+	def newResolutionResult(MissingRequiredAttributesException... missingRequiredAttributesException) {
+		ViewResolutionErrorsException viewResolutionErrors = new ViewResolutionErrorsException(null)
+		missingRequiredAttributesException.each {
+			viewResolutionErrors.addMissingRequiredAttributeError(it)
 		}
-		
-		assertEquals(xmlFilesCount, xmlFilesProcessed)
+		new ViewResolutionResult(null, viewResolutionErrors)
 	}
 	
-	def void test_givenXmlContainsRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnName() {
-		def xmlWithRoboBindingNamespaceDeclaration = 
-			'''<?xml version="1.0" encoding="utf-8"?>
-				<LinearLayout
-					xmlns:android="http://schemas.android.com/apk/res/android"
-					xmlns:bind="http://robobinding.org/android"
-					android:orientation="horizontal"></LinearLayout>'''
+	def "given multiple errors occur whilst validating the files, then report errors in files"() {
 		
-		assertNotNull validator.getRoboBindingNamespaceDeclaration(xmlWithRoboBindingNamespaceDeclaration)
 	}
 	
-	def void test_givenXmlDoesNotContainRoboBindingNamespace_whenCheckingIfNamespaceIsDeclared_thenReturnNull() {
-		def xmlWithoutRoboBindingNamespaceDeclaration =
-			'''<?xml version="1.0" encoding="utf-8"?>
-				<LinearLayout
-					xmlns:android="http://schemas.android.com/apk/res/android"
-					android:orientation="horizontal"></LinearLayout>'''
-		
-		assertNull validator.getRoboBindingNamespaceDeclaration(xmlWithoutRoboBindingNamespaceDeclaration)
-	}
-	
-	def void test_givenXmlWithBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
-//		def xml = '''<?xml version="1.0" encoding="utf-8"?>
-//			<LinearLayout
-//				xmlns:android="http://schemas.android.com/apk/res/android"
-//				xmlns:bind="http://robobinding.org/android"
-//				android:orientation="horizontal">
-//				<EditText
-//					android:layout_width="fill_parent"
-//					android:layout_height="wrap_content"
-//					bind:enabled="{firstnameInputEnabled}"
-//					bind:text="${firstname}" />
-//			</LinearLayout>'''
-		def xml = '''<?xml version="1.0" encoding="utf-8"?>
-					 <LinearLayout
-			         xmlns:android="http://schemas.android.com/apk/res/android"
-			         xmlns:bind="http://robobinding.org/android"
-			         android:orientation="horizontal">
-					 <TextView android:id="@+id/some_id"
-					 android:layout_width="fill_parent"
-					 android:layout_height="wrap_content"
-					 bind:text_8="{name}"/>
-
-					 <EditText
-					 android:layout_width="fill_parent"
-					 android:layout_height="wrap_content"
-					 bind:text_13="{age}" >
-					 </EditText>
-					 </LinearLayout>'''
-			
-		def viewFound, attributesFound
-		validator.forEachViewWithBindingAttributesInThe([text: xml]) {viewAttributeDetails ->
-			viewFound = viewAttributeDetails.viewName
-			attributesFound = viewAttributeDetails.attributes
+	def getViewBindingsForFile() {
+		def viewBindingsForFile = [:]
+		10.times {
+			def file = Mock(File.class)
+			viewBindingsForFile[file] = [new ViewBindingAttributes()]
 		}
-		
-		assertEquals ("EditText", viewFound) 
-		assertEquals ([enabled: '{firstnameInputEnabled}', text: '${firstname}'], attributesFound)
-	}
-	
-	def void test_givenXmlWithNestedBindingAttributes_whenProcessingEachTag_thenInvokeClosure() {
-		def xml = '''<?xml version="1.0" encoding="utf-8"?>
-			<LinearLayout
-				xmlns:android="http://schemas.android.com/apk/res/android"
-				xmlns:bind="http://robobinding.org/android"
-				android:orientation="horizontal">
-				<RadioGroup
-					android:layout_width="fill_parent"
-					android:layout_height="wrap_content"
-					bind:enabled="{enabled}" >
-					
-					<RadioButton
-						android:layout_width="fill_parent"
-						android:layout_height="wrap_content"
-						bind:visibility="{visible}" />
-
-				</RadioGroup>
-			</LinearLayout>'''
-		
-		def viewsFound = []
-		def attributesFound = [:]
-		validator.forEachViewWithBindingAttributesInThe([text: xml]) {viewAttributeDetails ->
-			viewsFound << viewAttributeDetails.viewName
-			attributesFound[viewAttributeDetails.viewName] = viewAttributeDetails.attributes
-		}
-		
-		assertEquals (["RadioGroup", "RadioButton"], viewsFound)
-		assertEquals ([RadioGroup: [enabled:"{enabled}"], RadioButton: [visibility:"{visible}"]], attributesFound)
-	}
-	
-	def void setUp() {
-		resFolder = new File("${TEMP_PATH}/res")
-		resFolder.mkdir()
-		
-		validator = new BindingAttributesValidator(new File(TEMP_PATH), 
-			[hasFileChangedSinceLastBuild: {Object[] args -> true}] as FileChangeChecker, 
-			[errorIn: {Object[] args -> println "Error reported"}] as ErrorReporter)
-	}
-	
-	def createLayoutFolders() {
-		layoutFoldersCount = anyNumber()
-		
-		def layoutFolderIndex = 0
-		layoutFoldersCount.times {
-			new File(resFolder, "layout${layoutFolderIndex++}").mkdir()
-		}
-	}
-	
-	def createLayoutXmlFiles() {
-		xmlFilesCount = anyNumber()
-		def xmlFileIndex = 0
-		xmlFilesCount.times {
-			new File(resFolder, "${xmlFileIndex++}.xml").createNewFile()
-		}
-		
-		anyNumber().times {
-			new File(resFolder, "${xmlFileIndex++}.txt").createNewFile()
-		}
-	}
-	
-	def void tearDown() {
-		resFolder.deleteDir()
-	}
-	
-	def anyNumber() {
-		return new Random().nextInt(10) + 1
+		viewBindingsForFile
 	}
 }

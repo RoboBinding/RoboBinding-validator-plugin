@@ -34,7 +34,7 @@ class MojoErrorReporter implements ErrorReporter
 	def errorMessages = []
 	
 	void errorIn(File file, int lineNumber, String errorMessage) {
-		buildContext.addMessage(file, lineNumber, 0, errorMessage, BuildContext.SEVERITY_ERROR, null)
+		buildContext.addMessage(file, lineNumber, 0, "$errorMessage\n\n", BuildContext.SEVERITY_ERROR, null)
 		errorMessages << "${file.name} line $lineNumber: $errorMessage"
 	}
 	

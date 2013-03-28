@@ -18,6 +18,8 @@ package org.robobinding.plugins.validator.mojo
 import org.mockito.Mockito
 import org.sonatype.plexus.build.incremental.BuildContext
 
+import spock.lang.Specification
+
 
 /**
  *
@@ -25,44 +27,41 @@ import org.sonatype.plexus.build.incremental.BuildContext
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-class MojoErrorReporterTest extends GroovyTestCase {
+class MojoErrorReporterTest extends Specification {
 
-	def buildContext
-	def file
-	def mojoErrorReporter
+	BuildContext buildContext = Mock(BuildContext.class)
+	File file = new File("a_file.xml")
+	MojoErrorReporter mojoErrorReporter = new MojoErrorReporter(buildContext: buildContext)
 	def lineNumber = 13
-	
 	def errorMessage = "Error!"
 	
-	def void setUp() {
-		buildContext = Mockito.mock(BuildContext.class)
-		file = new File("a_file.xml")
-		mojoErrorReporter = new MojoErrorReporter(buildContext: buildContext)
-	}
-	
-	def void test_whenReportingAnError_thenDelegateToBuildContext() {
-		
+	def "when reporting an error then delegate to build context, inserting two line breaks"() {
+		when:
 		mojoErrorReporter.errorIn(file, lineNumber, errorMessage)
 		
-		Mockito.verify(buildContext).addMessage(file, lineNumber, 0, errorMessage, BuildContext.SEVERITY_ERROR, null)
+		then:
+		1 * buildContext.addMessage(file, lineNumber, 0, "$errorMessage\n\n", BuildContext.SEVERITY_ERROR, null)
 	}
 	
-	def void test_whenClearingErrors_thenDelegateToBuildContext() {
-		
+	def "when clearing errors then delegate to build context"() {
+		when:
 		mojoErrorReporter.clearErrorsFor(file)
 		
-		Mockito.verify(buildContext).removeMessages(file)
+		then:
+		1 * buildContext.removeMessages(file)
 	}
 	
-	def void test_whenReportingAnError_thenAddErrorToList() {
-		
+	def "when reporting an error then add error to list"() {
+		given:
 		def numberOfErrors = anyInt()
 		def expectedErrorMessages = []
 		numberOfErrors.times { expectedErrorMessages << "${file.name} line $lineNumber: $errorMessage" }
 		
+		when:
 		numberOfErrors.times { mojoErrorReporter.errorIn(file, lineNumber, errorMessage) }
 		
-		assertEquals(expectedErrorMessages, mojoErrorReporter.errorMessages)
+		then:
+		expectedErrorMessages == mojoErrorReporter.errorMessages
 	}
 	
 	def anyInt() {

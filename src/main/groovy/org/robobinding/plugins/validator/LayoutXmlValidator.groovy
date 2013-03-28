@@ -15,11 +15,6 @@
  */
 package org.robobinding.plugins.validator
 
-import groovy.lang.Closure;
-import groovy.transform.Immutable;
-
-import java.io.File;
-
 /**
  *
  * @since 1.0
@@ -32,11 +27,11 @@ class LayoutXmlValidator {
 	static final def XML_FILE = ~/.*[.xml]/
 	File resFolder
 	FilesWithChanges filesWithChanges
-	BindingAttributeValidator bindingAttributeValidator
+	BindingAttributesValidator bindingAttributeValidator
 	
 	void validate() {
 		def fileToViewBindingsMap = [:]
-		
+
 		inEachLayoutFolder { layoutFolder ->
 			inEachXmlFile(layoutFolder) { xmlFile ->
 				fileToViewBindingsMap[xmlFile] = filesWithChanges.findUpdatedViewsWithBindings(xmlFile)
