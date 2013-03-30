@@ -31,18 +31,18 @@ import org.sonatype.plexus.build.incremental.BuildContext
 class MojoErrorReporter implements ErrorReporter
 {
 	BuildContext buildContext
-	def errorMessages = []
+	boolean errorsReported
 	
 	void errorIn(File file, int lineNumber, String errorMessage) {
-		buildContext.addMessage(file, lineNumber, 0, "$errorMessage\n\n", BuildContext.SEVERITY_ERROR, null)
-		errorMessages << "${file.name} line $lineNumber: $errorMessage"
+		buildContext.addMessage(file, lineNumber, 0, "$errorMessage", BuildContext.SEVERITY_ERROR, null)
+		errorsReported = true
 	}
 	
 	void clearErrorsFor(File file) {
 		buildContext.removeMessages(file)
 	}
 	
-	List<String> getErrorMessages() {
-		errorMessages
+	boolean errorsReported() {
+		errorsReported
 	}
 }

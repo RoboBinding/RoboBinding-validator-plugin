@@ -35,12 +35,12 @@ class MojoErrorReporterTest extends Specification {
 	def lineNumber = 13
 	def errorMessage = "Error!"
 	
-	def "when reporting an error then delegate to build context, inserting two line breaks"() {
+	def "when reporting an error then delegate to build context"() {
 		when:
 		mojoErrorReporter.errorIn(file, lineNumber, errorMessage)
 		
 		then:
-		1 * buildContext.addMessage(file, lineNumber, 0, "$errorMessage\n\n", BuildContext.SEVERITY_ERROR, null)
+		1 * buildContext.addMessage(file, lineNumber, 0, "$errorMessage", BuildContext.SEVERITY_ERROR, null)
 	}
 	
 	def "when clearing errors then delegate to build context"() {
@@ -51,20 +51,13 @@ class MojoErrorReporterTest extends Specification {
 		1 * buildContext.removeMessages(file)
 	}
 	
-	def "when reporting an error then add error to list"() {
-		given:
-		def numberOfErrors = anyInt()
-		def expectedErrorMessages = []
-		numberOfErrors.times { expectedErrorMessages << "${file.name} line $lineNumber: $errorMessage" }
+	def "after reporting an error, then errors reported should be true"() {
+		assert !mojoErrorReporter.errorsReported()
 		
 		when:
-		numberOfErrors.times { mojoErrorReporter.errorIn(file, lineNumber, errorMessage) }
+		mojoErrorReporter.errorIn(file, lineNumber, errorMessage)
 		
 		then:
-		expectedErrorMessages == mojoErrorReporter.errorMessages
-	}
-	
-	def anyInt() {
-		return new Random().nextInt(10) + 1
+		mojoErrorReporter.errorsReported()
 	}
 }

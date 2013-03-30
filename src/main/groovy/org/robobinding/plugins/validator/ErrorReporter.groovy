@@ -29,5 +29,6 @@ interface ErrorReporter {
 	
 	void clearErrorsFor(File file)
 	
-	List<String> getErrorMessages()
+	boolean errorsReported()
+	
 }

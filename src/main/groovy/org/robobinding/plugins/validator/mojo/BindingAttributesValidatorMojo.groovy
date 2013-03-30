@@ -66,8 +66,8 @@ class BindingAttributesValidatorMojo extends GroovyMojo
 		LayoutXmlValidator layoutXmlValidator = new LayoutXmlValidator(resFolder: new File(baseFolder, "res"), filesWithChanges: filesWithChanges, bindingAttributeValidator: bindingAttributeValidator)
 		layoutXmlValidator.validate()
 		
-		if (errorReporter.errorMessages)
-		   throw new MojoFailureException(describe(errorReporter.errorMessages))
+		if (errorReporter.errorsReported)
+		   throw new MojoFailureException("Binding attributes validation failed.")
 		
 		log.info("Done!")
 	}
@@ -86,7 +86,4 @@ class BindingAttributesValidatorMojo extends GroovyMojo
 		new BindingAttributesValidator(bindingAttributeResolver: bindingAttributeResolver, errorReporter: errorReporter)
 	}
 	
-	private String describe(errorMessages) {
-		"${errorMessages.join('\n\n')}\n\n"
-	}
 }
