@@ -26,7 +26,8 @@ class LayoutXmlValidator {
 	static final def LAYOUT_FOLDER = ~/[layout].*/
 	static final def XML_FILE = ~/.*[.xml]/
 	File resFolder
-	FilesWithChanges filesWithChanges
+	FileChangeChecker fileChangeChecker
+	FilesWithBindingAttributes filesWithBindingAttributes
 	BindingAttributesValidator bindingAttributeValidator
 	
 	void validate() {
@@ -34,7 +35,9 @@ class LayoutXmlValidator {
 
 		inEachLayoutFolder { layoutFolder ->
 			inEachXmlFile(layoutFolder) { xmlFile ->
-				fileToViewBindingsMap[xmlFile] = filesWithChanges.findUpdatedViewsWithBindings(xmlFile)
+				inEachFileWithChanges(xmlFile) { layoutFileWithChanges ->
+					fileToViewBindingsMap[xmlFile] = filesWithBindingAttributes.findViewsWithBindings(layoutFileWithChanges)
+				}
 			}
 		}
 		
@@ -45,7 +48,11 @@ class LayoutXmlValidator {
 		resFolder.eachDirMatch(LAYOUT_FOLDER) { c.call(it) }
 	}
 
-	def inEachXmlFile(File folder, Closure c) {
-		folder.eachFileMatch(XML_FILE) { c.call(it) }
+	def inEachXmlFile(File file, Closure c) {
+		file.eachFileMatch(XML_FILE) { c.call(it) }
+	}
+	
+	def inEachFileWithChanges(File file, Closure c) {
+		if (fileChangeChecker.hasFileChangedSinceLastBuild(file)) c.call(file)
 	}
 }

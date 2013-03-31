@@ -20,7 +20,7 @@ import org.apache.maven.plugins.annotations.Component
 import org.apache.maven.plugins.annotations.LifecyclePhase
 import org.apache.maven.plugins.annotations.Mojo
 import org.apache.maven.plugins.annotations.Parameter
-import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.plugins.annotations.ResolutionScope
 import org.codehaus.mojo.groovy.GroovyMojo
 import org.robobinding.binder.BindingAttributeResolver
 import org.robobinding.binder.ViewNameResolver
@@ -28,7 +28,6 @@ import org.robobinding.plugins.validator.BindingAttributesValidator
 import org.robobinding.plugins.validator.ErrorReporter
 import org.robobinding.plugins.validator.FileChangeChecker
 import org.robobinding.plugins.validator.FilesWithBindingAttributes
-import org.robobinding.plugins.validator.FilesWithChanges
 import org.robobinding.plugins.validator.LayoutXmlValidator
 import org.robobinding.plugins.validator.XmlLineNumberDecorator
 import org.robobinding.plugins.validator.XmlWithBindingAttributes
@@ -61,9 +60,8 @@ class BindingAttributesValidatorMojo extends GroovyMojo
 		log.info("Validating binding attributes...")
 		
 		ErrorReporter errorReporter = new MojoErrorReporter(buildContext: buildContext)
-		FilesWithChanges filesWithChanges = createFilesWithChangesValidator()
 		BindingAttributesValidator bindingAttributeValidator = createBindingAttributeValidator(errorReporter)
-		LayoutXmlValidator layoutXmlValidator = new LayoutXmlValidator(resFolder: new File(baseFolder, "res"), filesWithChanges: filesWithChanges, bindingAttributeValidator: bindingAttributeValidator)
+		LayoutXmlValidator layoutXmlValidator = createLayoutXmlValidator(bindingAttributeValidator)
 		layoutXmlValidator.validate()
 		
 		if (errorReporter.errorsReported)
@@ -71,19 +69,18 @@ class BindingAttributesValidatorMojo extends GroovyMojo
 		
 		log.info("Done!")
 	}
-
-	private FilesWithChanges createFilesWithChangesValidator() {
-		FileChangeChecker fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
-		XmlLineNumberDecorator xmlLineNumberDecorator = new XmlLineNumberDecorator()
-		ViewNameResolver viewNameResolver = new ViewNameResolver()
-		XmlWithBindingAttributes xmlWithBindingAttributes = new XmlWithBindingAttributes(xmlLineNumberDecorator: xmlLineNumberDecorator, viewNameResolver: viewNameResolver)
-		FilesWithBindingAttributes filesWithBindingAttributes = new FilesWithBindingAttributes(xmlWithBindingAttributes: xmlWithBindingAttributes)
-		new FilesWithChanges(fileChangeChecker: fileChangeChecker, filesWithBindingAttributes: filesWithBindingAttributes)
-	}
 	
 	private BindingAttributesValidator createBindingAttributeValidator(ErrorReporter errorReporter) {
 		BindingAttributeResolver bindingAttributeResolver = new BindingAttributeResolver()
 		new BindingAttributesValidator(bindingAttributeResolver: bindingAttributeResolver, errorReporter: errorReporter)
 	}
-	
+
+	private LayoutXmlValidator createLayoutXmlValidator(BindingAttributesValidator bindingAttributeValidator) {
+		FileChangeChecker fileChangeChecker = new MojoFileChangeChecker(buildContext: buildContext)
+		XmlLineNumberDecorator xmlLineNumberDecorator = new XmlLineNumberDecorator()
+		ViewNameResolver viewNameResolver = new ViewNameResolver()
+		XmlWithBindingAttributes xmlWithBindingAttributes = new XmlWithBindingAttributes(xmlLineNumberDecorator: xmlLineNumberDecorator, viewNameResolver: viewNameResolver)
+		FilesWithBindingAttributes filesWithBindingAttributes = new FilesWithBindingAttributes(xmlWithBindingAttributes: xmlWithBindingAttributes)
+		new LayoutXmlValidator(resFolder: new File(baseFolder, "res"), fileChangeChecker: fileChangeChecker, filesWithBindingAttributes: filesWithBindingAttributes, bindingAttributeValidator: bindingAttributeValidator)
+	}
 }

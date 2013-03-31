@@ -40,19 +40,19 @@ class BindingAttributesValidatorTest extends Specification {
 		bindingAttributeResolver: bindingAttributeResolver,
 		errorReporter: errorReporter)
 	
-//	def "when validating, first clear errors in files"() {
-//		given:
-//		def viewBindingsForFile = getViewBindingsForFile()
-//		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult()
-//		
-//		when: 
-//		bindingAttributeValidator.validate(viewBindingsForFile)
-//		
-//		then:
-//		viewBindingsForFile.each { file, viewNameAndAttributes ->
-//			1 * errorReporter.clearErrorsFor(file)
-//		}
-//	}
+	def "when validating, first clear errors in files"() {
+		given:
+		def viewBindingsForFile = getViewBindingsForFile()
+		bindingAttributeResolver.resolve(_ as PendingAttributesForView) >> newResolutionResult()
+		
+		when: 
+		bindingAttributeValidator.validate(viewBindingsForFile)
+		
+		then:
+		viewBindingsForFile.each { file, viewNameAndAttributes ->
+			1 * errorReporter.clearErrorsFor(file)
+		}
+	}
 	
 	def "given an unrecognized attribute error occurs whilst validating a file, then report error in the file"() {
 		given:

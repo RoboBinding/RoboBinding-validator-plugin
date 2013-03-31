@@ -25,23 +25,25 @@ import spock.lang.Specification
  */
 class FilesWithBindingAttributesTest extends Specification {
 
+	File xmlFile
+	String xml
 	XmlWithBindingAttributes xmlWithBindingAttributes = Mock()
 	FilesWithBindingAttributes filesWithBindingAttributes = new FilesWithBindingAttributes(
-	xmlWithBindingAttributes: xmlWithBindingAttributes)
+			xmlWithBindingAttributes: xmlWithBindingAttributes)
 
 	def "given xml with the RoboBinding namespace declaration, then search for views with bindings using binding prefix"() {
 		given:
-		def viewsAndAttributes = [new ViewBindingAttributes(), new ViewBindingAttributes()]
-		def xmlWithBindingDeclaration =
+		xmlFileWith(
 		'''<?xml version="1.0" encoding="utf-8"?>
 		      <LinearLayout
 		         xmlns:android="http://schemas.android.com/apk/res/android"
 		         xmlns:bind="http://robobinding.org/android"
-		         android:orientation="horizontal"/>'''
-		xmlWithBindingAttributes.findViewsWithBindings(xmlWithBindingDeclaration, 'bind') >> viewsAndAttributes
+		         android:orientation="horizontal"/>''')
+		def viewsAndAttributes = [new ViewBindingAttributes(), new ViewBindingAttributes()]
+		xmlWithBindingAttributes.findViewsWithBindings(xml, 'bind') >> viewsAndAttributes
 		
 		when:
-		def result = filesWithBindingAttributes.findViewsWithBindings(xmlWithBindingDeclaration)
+		def result = filesWithBindingAttributes.findViewsWithBindings(xmlFile)
 		
 		then:
 		result == viewsAndAttributes
@@ -49,16 +51,35 @@ class FilesWithBindingAttributesTest extends Specification {
 
 	def "given xml without the RoboBinding namespace declaration, then shouldn't find any views with bindings"() {
 		given:
-		def xmlWithoutBindingDeclaration =
+		xmlFileWith(
 		'''<?xml version="1.0" encoding="utf-8"?>
 		      <LinearLayout
 		         xmlns:android="http://schemas.android.com/apk/res/android"
-		         android:orientation="horizontal"/>'''
+		         android:orientation="horizontal"/>''')
 		
 		when:
-		def result = filesWithBindingAttributes.findViewsWithBindings(xmlWithoutBindingDeclaration)
+		def result = filesWithBindingAttributes.findViewsWithBindings(xmlFile)
 		
 		then:
 		result.isEmpty()
+	}
+	
+	def setup() {
+		createTempFolder()
+	}
+
+	private createTempFolder() {
+		new File("test-tmp").mkdir()
+	}
+	
+	private xmlFileWith(String xml) {
+		this.xml = xml
+		xmlFile = new File("test-tmp/file_with_changes")
+		xmlFile.createNewFile()
+		xmlFile.text = xml
+	}
+	
+	def cleanup() {
+		new File("test-tmp").deleteDir()
 	}
 }

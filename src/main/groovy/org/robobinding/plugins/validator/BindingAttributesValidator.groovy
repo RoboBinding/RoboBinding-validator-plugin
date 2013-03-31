@@ -33,7 +33,7 @@ class BindingAttributesValidator {
 
 	void validate(Map<File, List<ViewBindingAttributes>> viewBindingsForFile) {
 		viewBindingsForFile.each { xmlFile, viewBindingAttributesList ->
-			//errorReporter.clearErrorsFor(xmlFile)
+			errorReporter.clearErrorsFor(xmlFile)
 
 			resolveAllBindingAttributesInFile(viewBindingAttributesList, xmlFile)
 		}

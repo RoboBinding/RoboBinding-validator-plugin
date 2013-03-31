@@ -26,20 +26,23 @@ import spock.lang.Specification
  */
 class LayoutXmlValidatorTest extends Specification {
 
-	FilesWithChanges filesWithChanges = Mock()
+	FileChangeChecker fileChangeChecker = Mock()
+	FilesWithBindingAttributes filesWithBindingAttributes = Mock()
 	BindingAttributesValidator bindingAttributeValidator = Mock()
 	File resFolder = new File("test-tmp/res")
 	List<File> layoutFiles = []
 	Map<File, ViewBindingAttributes> fileToViewBindingsMap = [:]
 	LayoutXmlValidator layoutXmlValidator = new LayoutXmlValidator(
 		resFolder: resFolder, 
-		filesWithChanges: filesWithChanges,
+		fileChangeChecker: fileChangeChecker,
+		filesWithBindingAttributes: filesWithBindingAttributes,
 		bindingAttributeValidator: bindingAttributeValidator)
 	
 	def "should validate all updated views and bindings"() {
 		given:
 		layoutFiles.each { layoutFile ->
-			filesWithChanges.findUpdatedViewsWithBindings(layoutFile) >> viewBindingsFor(layoutFile)
+			filesWithBindingAttributes.findViewsWithBindings(layoutFile) >> viewBindingsFor(layoutFile)
+			fileChangeChecker.hasFileChangedSinceLastBuild(layoutFile) >> true
 		}
 		
 		when:
@@ -47,6 +50,20 @@ class LayoutXmlValidatorTest extends Specification {
 		
 		then:
 		1 * bindingAttributeValidator.validate(fileToViewBindingsMap)
+	}
+	
+	def "should not validate files without changes"() {
+		given:
+		layoutFiles.each { layoutFile ->
+			filesWithBindingAttributes.findViewsWithBindings(layoutFile) >> viewBindingsFor(layoutFile)
+			fileChangeChecker.hasFileChangedSinceLastBuild(layoutFile) >> false
+		}
+		
+		when:
+		layoutXmlValidator.validate()
+		
+		then:
+		0 * bindingAttributeValidator.validate(fileToViewBindingsMap)
 	}
 	
 	List<ViewBindingAttributes> viewBindingsFor(File layoutFile) {
