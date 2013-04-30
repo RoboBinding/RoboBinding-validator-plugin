@@ -26,6 +26,7 @@ import org.robobinding.binder.ViewResolutionResult
  */
 class BindingAttributeBinder {
 
+	//TODO: next thing to do is refactor those tests
 	ViewBindingErrors bind(ViewResolutionResult viewResolutionResult, File xmlFile) {
 		new ViewBindingErrors(null)
 	}

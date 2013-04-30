@@ -34,6 +34,9 @@ import android.view.View
  */
 class BindingAttributesValidator {
 
+	//-> ResolverWrapper, BinderWrapper
+	//each one already injected with the error reporter
+	//this class also injected with error reporter
 	BindingAttributeResolver bindingAttributeResolver
 	BindingAttributeBinder bindingAttributeBinder
 	ErrorReporter errorReporter

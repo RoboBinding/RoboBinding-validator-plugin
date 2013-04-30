@@ -34,12 +34,9 @@ import org.robobinding.plugins.validator.XmlLineNumberDecorator
 import org.robobinding.plugins.validator.XmlWithBindingAttributes
 import org.sonatype.plexus.build.incremental.BuildContext
 
+
 /**
  *
- * @goal validate-bindings
- * @phase compile
- * @configurator include-project-dependencies
- * 
  * @since 1.0
  * @version $Revision: 1.0 $
  * @author Robert Taylor
