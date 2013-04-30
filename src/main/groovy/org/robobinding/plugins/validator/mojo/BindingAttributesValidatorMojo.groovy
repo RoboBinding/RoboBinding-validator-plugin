@@ -24,6 +24,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope
 import org.codehaus.mojo.groovy.GroovyMojo
 import org.robobinding.binder.BindingAttributeResolver
 import org.robobinding.binder.ViewNameResolver
+import org.robobinding.plugins.validator.BindingAttributeBinder
 import org.robobinding.plugins.validator.BindingAttributesValidator
 import org.robobinding.plugins.validator.ErrorReporter
 import org.robobinding.plugins.validator.FileChangeChecker
@@ -72,7 +73,8 @@ class BindingAttributesValidatorMojo extends GroovyMojo
 	
 	private BindingAttributesValidator createBindingAttributeValidator(ErrorReporter errorReporter) {
 		BindingAttributeResolver bindingAttributeResolver = new BindingAttributeResolver()
-		new BindingAttributesValidator(bindingAttributeResolver: bindingAttributeResolver, errorReporter: errorReporter)
+		BindingAttributeBinder bindingAttributeBinder = new BindingAttributeBinder()
+		new BindingAttributesValidator(bindingAttributeResolver: bindingAttributeResolver, bindingAttributeBinder: bindingAttributeBinder, errorReporter: errorReporter)
 	}
 
 	private LayoutXmlValidator createLayoutXmlValidator(BindingAttributesValidator bindingAttributeValidator) {

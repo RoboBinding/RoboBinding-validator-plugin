@@ -19,7 +19,9 @@ import org.robobinding.AttributeResolutionException
 import org.robobinding.UnrecognizedAttributeException
 import org.robobinding.ViewResolutionErrorsException
 import org.robobinding.binder.BindingAttributeResolver
+import org.robobinding.binder.ViewBindingErrors
 import org.robobinding.binder.ViewResolutionResult
+import org.robobinding.viewattribute.AttributeBindingException
 
 import android.view.View
 
@@ -33,6 +35,7 @@ import android.view.View
 class BindingAttributesValidator {
 
 	BindingAttributeResolver bindingAttributeResolver
+	BindingAttributeBinder bindingAttributeBinder
 	ErrorReporter errorReporter
 
 	void validate(Map<File, List<ViewBindingAttributes>> viewBindingsForFile) {
@@ -52,6 +55,10 @@ class BindingAttributesValidator {
 			} catch (ViewResolutionErrorsException e) {
 				reportResolutionErrors(e, viewBindingAttributes, xmlFile)
 			}
+			
+			ViewBindingErrors viewBindingErrors = bindingAttributeBinder.bind(result, xmlFile)
+			Collection<AttributeBindingException> attributeBindingExceptions = viewBindingErrors.attributeErrors
+			reportBindingErrors(attributeBindingExceptions, viewBindingAttributes, xmlFile)
 		}
 	}
 
@@ -65,6 +72,13 @@ class BindingAttributesValidator {
 		}
 	}
 
+	private reportBindingErrors(Collection<AttributeBindingException> attributeBindingExceptions, ViewBindingAttributes viewBindingAttributes, File xmlFile) {
+		attributeBindingExceptions.each { attributeBindingException ->
+			def bindingAttribute = viewBindingAttributes[attributeBindingException.attribute]
+			reportAttributeBindingError(xmlFile, bindingAttribute, attributeBindingException.toString())
+		}
+	}
+	
 	def errorMessageFor(AttributeResolutionException e, View view) {
 		if (e instanceof UnrecognizedAttributeException)
 			return "$e.message for ${getViewSimpleName(view)}"
@@ -83,5 +97,9 @@ class BindingAttributesValidator {
 	
 	def reportMissingRequiredAttributesError(File xmlFile, int viewLineNumber, String errorMessage) {
 		errorReporter.errorIn(xmlFile, viewLineNumber, errorMessage)
+	}
+	
+	def reportAttributeBindingError(File xmlFile, BindingAttribute bindingAttribute, String errorMessage) {
+		errorReporter.errorIn(xmlFile, bindingAttribute.lineNumber, errorMessage)
 	}
 }
