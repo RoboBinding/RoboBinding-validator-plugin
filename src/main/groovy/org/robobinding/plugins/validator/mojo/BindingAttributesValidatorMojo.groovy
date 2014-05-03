@@ -23,7 +23,7 @@ import org.apache.maven.plugins.annotations.Parameter
 import org.apache.maven.plugins.annotations.ResolutionScope
 import org.codehaus.mojo.groovy.GroovyMojo
 import org.robobinding.binder.BindingAttributeResolver
-import org.robobinding.binder.ViewNameResolver
+import org.robobinding.ViewNameResolver
 import org.robobinding.plugins.validator.BindingAttributesValidator
 import org.robobinding.plugins.validator.ErrorReporter
 import org.robobinding.plugins.validator.FileChangeChecker
@@ -38,38 +38,38 @@ import org.sonatype.plexus.build.incremental.BuildContext
  * @goal validate-bindings
  * @phase compile
  * @configurator include-project-dependencies
- * 
+ *
  * @since 1.0
  * @version $Revision: 1.0 $
  * @author Robert Taylor
  */
-@Mojo(name="validate-bindings", 
-	defaultPhase=LifecyclePhase.COMPILE, 
+@Mojo(name="validate-bindings",
+	defaultPhase=LifecyclePhase.COMPILE,
 	requiresDependencyResolution=ResolutionScope.COMPILE_PLUS_RUNTIME,
 	threadSafe=true)
 class BindingAttributesValidatorMojo extends GroovyMojo
 {
 	@Parameter(property='basedir',required=true)
 	public File baseFolder
-	
+
 	@Component
 	public BuildContext buildContext;
-	
+
 	void execute()
 	{
 		log.info("Validating binding attributes...")
-		
+
 		ErrorReporter errorReporter = new MojoErrorReporter(buildContext: buildContext)
 		BindingAttributesValidator bindingAttributeValidator = createBindingAttributeValidator(errorReporter)
 		LayoutXmlValidator layoutXmlValidator = createLayoutXmlValidator(bindingAttributeValidator)
 		layoutXmlValidator.validate()
-		
+
 		if (errorReporter.errorsReported)
 		   throw new MojoFailureException("Binding attributes validation failed.")
-		
+
 		log.info("Done!")
 	}
-	
+
 	private BindingAttributesValidator createBindingAttributeValidator(ErrorReporter errorReporter) {
 		BindingAttributeResolver bindingAttributeResolver = new BindingAttributeResolver()
 		new BindingAttributesValidator(bindingAttributeResolver: bindingAttributeResolver, errorReporter: errorReporter)

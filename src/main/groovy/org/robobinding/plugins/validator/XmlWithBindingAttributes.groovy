@@ -20,7 +20,7 @@ import groovy.util.slurpersupport.GPathResult
 import javax.xml.namespace.QName
 
 import org.mockito.Mockito
-import org.robobinding.binder.ViewNameResolver
+import org.robobinding.ViewNameResolver
 
 import android.view.View
 
@@ -34,32 +34,32 @@ class XmlWithBindingAttributes {
 
 	XmlLineNumberDecorator xmlLineNumberDecorator
 	ViewNameResolver viewNameResolver
-	
+
 	List<ViewBindingAttributes> findViewsWithBindings(String xml, String bindingPrefix) {
 		List<ViewBindingAttributes> viewBindingAttributes = []
 		String xmlWithLineNumbers = xmlLineNumberDecorator.embedLineNumbers(xml, bindingPrefix)
-		
+
 		GPathResult rootNode = new XmlSlurper().parseText(xmlWithLineNumbers)
-		
+
 		rootNode.children().eachWithIndex { it, index ->
-			processViewNode(it, viewBindingAttributes) 
+			processViewNode(it, viewBindingAttributes)
 		}
-		
+
 		viewBindingAttributes
 	}
-	
+
 	def processViewNode(viewNode, viewNamesAndAttributes) {
 		String viewName = viewNameResolver.getViewNameFromLayoutTag(viewNode.name())
-		
+
 		if (viewName.startsWith("android")) {
 			View view = instanceOf(viewName)
 			int viewLineNumber = getLineNumber(viewNode)
 			def rawBindingAttributesMap = getBindingAttributesForNode(viewNode)
 			addBindingAttributesToList(rawBindingAttributesMap, view, viewLineNumber, viewNamesAndAttributes)
 		}
-		
-		viewNode.children().each { 
-			processViewNode(it, viewNamesAndAttributes) 
+
+		viewNode.children().each {
+			processViewNode(it, viewNamesAndAttributes)
 		}
 	}
 
@@ -67,7 +67,7 @@ class XmlWithBindingAttributes {
 		Class viewClass = Class.forName(fullyQualifiedViewName)
 		Mockito.mock(viewClass)
 	}
-	
+
 	private getBindingAttributesForNode(viewNode) {
 		def viewAttributes = viewNode.attributes()
 		def nodeField = viewNode.getClass().getDeclaredField("node")
@@ -78,32 +78,32 @@ class XmlWithBindingAttributes {
 		def bindingAttributeNames = attributesWithRoboBindingNamespace*.key
 		viewAttributes.subMap(bindingAttributeNames)
 	}
-	
+
 	private int getLineNumber(viewNode) {
 		viewNode.attributes()[XmlLineNumberDecorator.LINE_NUMBER_ATTRIBUTE].toInteger()
 	}
-	
+
 	private addBindingAttributesToList(rawBindingAttributesMap, View view, int viewLineNumber, viewNamesAndAttributes) {
 		Map<String, BindingAttribute> bindingAttributes = getBindingAttributes(rawBindingAttributesMap)
 		if (bindingAttributes) {
-			
+
 			def viewBindingAttributes = new ViewBindingAttributes(
-					view: view,	
+					view: view,
 					viewLineNumber: viewLineNumber,
 					bindingAttributes: bindingAttributes)
-			
+
 			viewNamesAndAttributes << viewBindingAttributes
 		}
 	}
-	
+
 	private Map<String, BindingAttribute> getBindingAttributes(rawBindingAttributesMap) {
 		def bindingAttributes = [:]
-		
+
 		rawBindingAttributesMap.each { attributeQName, attributeValue ->
 			String rawAttributeName = QName.valueOf(attributeQName).localPart
 			addBindingAttributeToMap(rawAttributeName, attributeValue, bindingAttributes)
 		}
-		
+
 		bindingAttributes
 	}
 
@@ -114,5 +114,5 @@ class XmlWithBindingAttributes {
 				attributeValue: attributeValue,
 				lineNumber: attributeDetails[1].toInteger())
 	}
-	
+
 }
